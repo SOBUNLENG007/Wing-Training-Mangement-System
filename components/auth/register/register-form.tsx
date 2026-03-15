@@ -68,14 +68,16 @@ export function RegisterForm({
   }
 
   return (
-<div className="
+    <div
+      className="
   mx-auto w-full max-w-3xl
-  rounded-[32px]
+  rounded-4xl
   bg-white
   border border-blue-200
   p-12
   shadow-[0_20px_60px_rgba(37,99,235,0.15)]
-">
+"
+    >
       <div className="mb-8 text-center">
         <h2 className="text-3xl font-bold text-blue-600 tracking-wide uppercase">
           Registration
