@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useState } from "react"
-import { useAuth } from "@/lib/auth-store"
+import { useAuthStore } from "@/lib/auth-store"
 import {
   LayoutDashboard,
   BookOpen,
@@ -120,13 +120,15 @@ export function AppSidebar({
 }) {
   const pathname = usePathname()
   const router = useRouter()
-  const { user, logout } = useAuth()
+  const { user, logout } = useAuthStore()
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
   if (!user) return null
 
+  const normalizedRole = (user.role || "").toLowerCase()
+
   const visibleItems = menuItems.filter((item) =>
-    item.roles.includes(user.role as Role)
+    item.roles.includes(normalizedRole as Role)
   )
 
   const isActive = (href: string) => {

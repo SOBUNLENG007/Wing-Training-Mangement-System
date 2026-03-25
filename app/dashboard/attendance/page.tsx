@@ -1,10 +1,10 @@
  
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { RoleGuard } from "@/components/auth/role-guard"
-import { mockAttendance } from "@/lib/mock-data"
-import type { AttendanceRecord } from "@/lib/mock-data"
+import { attendanceService } from "@/service/attendance/attendance.service"
+import type { AttendanceRecord } from "@/lib/types/attendance"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -25,6 +25,8 @@ import {
   Calendar,
   Percent,
 } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
+import { toast } from "sonner"
 
 const attendanceCfg = {
   present: {
@@ -45,8 +47,27 @@ const attendanceCfg = {
 }
 
 function AttendancePageContent() {
-  const [records, setRecords] = useState<AttendanceRecord[]>(mockAttendance)
+  const [records, setRecords] = useState<AttendanceRecord[]>([])
+  const [loading, setLoading] = useState(true)
   const [sessionFilter, setSessionFilter] = useState("all")
+
+  // Load attendance data on mount
+  useEffect(() => {
+    loadAttendance();
+  }, [])
+
+  const loadAttendance = async () => {
+    try {
+      setLoading(true)
+      const data = await attendanceService.getAll()
+      setRecords(data)
+    } catch (error) {
+      console.error("Failed to load attendance:", error)
+      toast.error("Failed to load attendance data")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const filtered =
     sessionFilter === "all"
@@ -105,57 +126,73 @@ function AttendancePageContent() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Card>
-          <CardContent className="flex items-center gap-4 p-5">
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-wtms-green">
-              <CheckCircle2 className="size-6 text-card" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-foreground">{totalPresent}</p>
-              <p className="text-sm text-muted-foreground">Present</p>
-            </div>
-          </CardContent>
-        </Card>
+      {loading ? (
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i}>
+              <CardContent className="flex items-center gap-4 p-5">
+                <Skeleton className="size-12 rounded-xl" />
+                <div>
+                  <Skeleton className="h-8 w-12 mb-1" />
+                  <Skeleton className="h-4 w-16" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <Card>
+            <CardContent className="flex items-center gap-4 p-5">
+              <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-wtms-green">
+                <CheckCircle2 className="size-6 text-card" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{totalPresent}</p>
+                <p className="text-sm text-muted-foreground">Present</p>
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardContent className="flex items-center gap-4 p-5">
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-destructive">
-              <XCircle className="size-6 text-card" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-foreground">{totalAbsent}</p>
-              <p className="text-sm text-muted-foreground">Absent</p>
-            </div>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardContent className="flex items-center gap-4 p-5">
+              <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-destructive">
+                <XCircle className="size-6 text-card" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{totalAbsent}</p>
+                <p className="text-sm text-muted-foreground">Absent</p>
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardContent className="flex items-center gap-4 p-5">
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-wtms-orange">
-              <Clock className="size-6 text-card" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-foreground">{totalLate}</p>
-              <p className="text-sm text-muted-foreground">Late</p>
-            </div>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardContent className="flex items-center gap-4 p-5">
+              <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-wtms-orange">
+                <Clock className="size-6 text-card" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{totalLate}</p>
+                <p className="text-sm text-muted-foreground">Late</p>
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardContent className="flex items-center gap-4 p-5">
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary">
-              <Percent className="size-6 text-card" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-foreground">
-                {participationRate}%
-              </p>
-              <p className="text-sm text-muted-foreground">Participation</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          <Card>
+            <CardContent className="flex items-center gap-4 p-5">
+              <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary">
+                <Percent className="size-6 text-card" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">
+                  {participationRate}%
+                </p>
+                <p className="text-sm text-muted-foreground">Participation</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Filter */}
       <div className="flex items-center gap-3">

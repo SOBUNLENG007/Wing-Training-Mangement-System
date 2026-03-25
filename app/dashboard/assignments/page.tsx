@@ -1,11 +1,11 @@
  
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useAuth } from "@/lib/auth-store"
 import { RoleGuard } from "@/components/auth/role-guard"
-import { mockAssignments } from "@/lib/mock-data"
-import type { Assignment } from "@/lib/mock-data"
+import { assignmentsService } from "@/service/assignments/assignments.service"
+import type { Assignment } from "@/lib/types/assignment"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -33,6 +33,8 @@ import {
   Star,
   MessageSquare,
 } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
+import { toast } from "sonner"
 
 const statusConfig = {
   pending: {
@@ -59,7 +61,8 @@ const statusConfig = {
 
 function AssignmentsPageContent() {
   const { user } = useAuth()
-  const [assignments, setAssignments] = useState<Assignment[]>(mockAssignments)
+  const [assignments, setAssignments] = useState<Assignment[]>([])
+  const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [showCreate, setShowCreate] = useState(false)
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null)
@@ -69,6 +72,24 @@ function AssignmentsPageContent() {
   const isTrainer = user?.role === "trainer"
   const isEmployee = user?.role === "employee"
   const canManageAssignments = isAdmin || isTrainer
+
+  // Load assignments on mount
+  useEffect(() => {
+    loadAssignments()
+  }, [])
+
+  const loadAssignments = async () => {
+    try {
+      setLoading(true)
+      const data = await assignmentsService.getAll()
+      setAssignments(data)
+    } catch (error) {
+      console.error("Failed to load assignments:", error)
+      toast.error("Failed to load assignments")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const filtered = assignments.filter(
     (a) =>
@@ -237,55 +258,78 @@ function AssignmentsPageContent() {
         />
       </div>
 
-      <Tabs defaultValue="pending">
-        <TabsList>
-          <TabsTrigger value="pending" className="gap-1.5">
-            <Clock className="size-3.5" />
-            Pending ({pending.length})
-          </TabsTrigger>
-          <TabsTrigger value="submitted" className="gap-1.5">
-            <Send className="size-3.5" />
-            Submitted ({submitted.length})
-          </TabsTrigger>
-          <TabsTrigger value="graded" className="gap-1.5">
-            <CheckCircle2 className="size-3.5" />
-            Graded ({graded.length})
-          </TabsTrigger>
-        </TabsList>
+      {loading ? (
+        <div className="space-y-4">
+          <Skeleton className="h-10 w-64" />
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Card key={i} className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-2 flex-1">
+                    <Skeleton className="h-5 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                    <div className="flex gap-2">
+                      <Skeleton className="h-5 w-16" />
+                      <Skeleton className="h-4 w-20" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-8 w-20" />
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <Tabs defaultValue="pending">
+          <TabsList>
+            <TabsTrigger value="pending" className="gap-1.5">
+              <Clock className="size-3.5" />
+              Pending ({pending.length})
+            </TabsTrigger>
+            <TabsTrigger value="submitted" className="gap-1.5">
+              <Send className="size-3.5" />
+              Submitted ({submitted.length})
+            </TabsTrigger>
+            <TabsTrigger value="graded" className="gap-1.5">
+              <CheckCircle2 className="size-3.5" />
+              Graded ({graded.length})
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="pending" className="mt-4 space-y-3">
-          {pending.map((a) => (
-            <AssignmentCard key={a.id} assignment={a} />
-          ))}
-          {pending.length === 0 && (
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              No pending assignments.
-            </p>
-          )}
-        </TabsContent>
+          <TabsContent value="pending" className="mt-4 space-y-3">
+            {pending.map((a) => (
+              <AssignmentCard key={a.id} assignment={a} />
+            ))}
+            {pending.length === 0 && (
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                No pending assignments.
+              </p>
+            )}
+          </TabsContent>
 
-        <TabsContent value="submitted" className="mt-4 space-y-3">
-          {submitted.map((a) => (
-            <AssignmentCard key={a.id} assignment={a} />
-          ))}
-          {submitted.length === 0 && (
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              No submitted assignments.
-            </p>
-          )}
-        </TabsContent>
+          <TabsContent value="submitted" className="mt-4 space-y-3">
+            {submitted.map((a) => (
+              <AssignmentCard key={a.id} assignment={a} />
+            ))}
+            {submitted.length === 0 && (
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                No submitted assignments.
+              </p>
+            )}
+          </TabsContent>
 
-        <TabsContent value="graded" className="mt-4 space-y-3">
-          {graded.map((a) => (
-            <AssignmentCard key={a.id} assignment={a} />
-          ))}
-          {graded.length === 0 && (
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              No graded assignments.
-            </p>
-          )}
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="graded" className="mt-4 space-y-3">
+            {graded.map((a) => (
+              <AssignmentCard key={a.id} assignment={a} />
+            ))}
+            {graded.length === 0 && (
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                No graded assignments.
+              </p>
+            )}
+          </TabsContent>
+        </Tabs>
+      )}
 
       {/* Detail / Submit Dialog */}
       <Dialog

@@ -1,6 +1,5 @@
 "use client"
-
-import { useAuth } from "@/lib/auth-store"
+import { useAuthStore } from "@/lib/auth-store"
 import {
   mockSessions,
   mockAssignments,
@@ -473,11 +472,11 @@ function EmployeeDashboard({ userName }: { userName: string }) {
    MAIN PAGE ROUTER
    ================================================ */
 export default function DashboardPage() {
-  const { user } = useAuth()
+  const { user } = useAuthStore()
 
   if (!user) return null
 
-  switch (user.role) {
+  switch (user.role?.toLowerCase()) {
     case "admin":
       return <AdminDashboard userName={user.name} />
 

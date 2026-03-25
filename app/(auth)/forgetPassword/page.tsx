@@ -40,7 +40,7 @@ export function ForgotPasswordForm({
     <div className="mx-auto w-full max-w-[500px] rounded-[32px] bg-white border border-slate-100 p-10 sm:p-12 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
       
       <div className="mb-8 text-left">
-        <h2 className="text-[28px] font-bold tracking-tight text-slate-900">
+        <h2 className="text-3xl font-bold tracking-wide text-blue-600">
           Forgot your password?
         </h2>
       </div>
@@ -107,6 +107,14 @@ export function ForgotPasswordForm({
           </button>
         </div>
       </form>
+    </div>
+  );
+}
+
+export default function ForgotPasswordPage() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+      <ForgotPasswordForm onSwitchToLogin={() => {}} />
     </div>
   );
 }

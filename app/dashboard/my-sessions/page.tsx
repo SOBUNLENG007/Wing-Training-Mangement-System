@@ -2,9 +2,18 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { RoleGuard } from "@/components/auth/role-guard";
-import { mockSessions, mockMaterials, mockAssignments, mockAttendance, mockProgress } from "@/lib/mock-data";
+import { sessionsService } from "@/service/sessions/sessions.service";
+import { materialsService } from "@/service/materials/materials.service";
+import { assignmentsService } from "@/service/assignments/assignments.service";
+import { attendanceService } from "@/service/attendance/attendance.service";
+import { progressService } from "@/service/progress/progress.service";
+import type { TrainingSession } from "@/lib/types/session"
+import type { Material } from "@/lib/types/material"
+import type { Assignment } from "@/lib/types/assignment"
+import type { AttendanceRecord } from "@/lib/types/attendance"
+import type { ProgressRecord } from "@/lib/types/progress"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,6 +33,8 @@ import {
   Presentation,
   Video,
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 
 const typeIcon = {
   pdf: FileText,
@@ -38,14 +49,58 @@ const statusConfig = {
 };
 
 function MySessionsPageContent() {
+  const [sessions, setSessions] = useState<TrainingSession[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<string | null>(null);
+  const [sessionMaterials, setSessionMaterials] = useState<Material[]>([]);
+  const [sessionAssignments, setSessionAssignments] = useState<Assignment[]>([]);
+  const [sessionAttendance, setSessionAttendance] = useState<AttendanceRecord[]>([]);
+  const [sessionProgress, setSessionProgress] = useState<ProgressRecord[]>([]);
 
-  const session = selected ? mockSessions.find((s) => s.id === selected) : null;
-  const sessionMaterials = selected ? mockMaterials.filter((m) => m.sessionId === selected) : [];
-  const sessionAssignments = selected ? mockAssignments.filter((a) => a.sessionId === selected) : [];
-  const sessionAttendance = selected
-    ? mockAttendance.filter((a) => a.sessionTitle === session?.title)
-    : [];
+  // Load sessions on mount
+  useEffect(() => {
+    loadSessions();
+  }, []);
+
+  const loadSessions = async () => {
+    try {
+      setLoading(true);
+      const data = await sessionsService.getAll();
+      setSessions(data);
+    } catch (error) {
+      console.error("Failed to load sessions:", error);
+      toast.error("Failed to load sessions");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load session details when selected
+  useEffect(() => {
+    if (selected) {
+      loadSessionDetails(selected);
+    }
+  }, [selected]);
+
+  const loadSessionDetails = async (sessionId: string) => {
+    try {
+      const [materials, assignments, attendance, progress] = await Promise.all([
+        materialsService.getBySession(sessionId),
+        assignmentsService.getBySession(sessionId),
+        attendanceService.getBySession(sessionId),
+        progressService.getBySession(sessionId)
+      ]);
+      setSessionMaterials(materials);
+      setSessionAssignments(assignments);
+      setSessionAttendance(attendance);
+      setSessionProgress(progress);
+    } catch (error) {
+      console.error("Failed to load session details:", error);
+      toast.error("Failed to load session details");
+    }
+  };
+
+  const session = selected ? sessions.find((s) => s.id === selected) : null;
 
   return (
     <div className="space-y-6">
@@ -57,10 +112,10 @@ function MySessionsPageContent() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {mockSessions.map((s) => {
+        {sessions.map((s) => {
           const cfg = statusConfig[s.status];
           const StatusIcon = cfg.icon;
-          const progress = mockProgress.find((p) => p.sessionTitle === s.title);
+          const progress = sessionProgress.find((p) => p.sessionTitle === s.title);
 
           return (
             <Card

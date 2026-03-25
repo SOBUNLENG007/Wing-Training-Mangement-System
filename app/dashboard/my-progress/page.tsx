@@ -1,8 +1,12 @@
  
 "use client"
 
+import { useState, useEffect } from "react"
 import { RoleGuard } from "@/components/auth/role-guard"
-import { mockProgress, mockAssignments } from "@/lib/mock-data"
+import { progressService } from "@/service/progress/progress.service"
+import { assignmentsService } from "@/service/assignments/assignments.service"
+import type { ProgressRecord } from "@/lib/types/progress"
+import type { Assignment } from "@/lib/types/assignment"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
@@ -15,6 +19,8 @@ import {
   Award,
   BookOpen,
 } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
+import { toast } from "sonner"
 
 const statusCfg = {
   completed: {
@@ -38,24 +44,50 @@ const statusCfg = {
 }
 
 function MyProgressPageContent() {
-  const completedCount = mockProgress.filter((p) => p.status === "completed").length
-  const inProgressCount = mockProgress.filter((p) => p.status === "in-progress").length
-  const totalCourses = mockProgress.length
+  const [progress, setProgress] = useState<ProgressRecord[]>([])
+  const [assignments, setAssignments] = useState<Assignment[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Load data on mount
+  useEffect(() => {
+    loadData()
+  }, [])
+
+  const loadData = async () => {
+    try {
+      setLoading(true)
+      const [progressData, assignmentsData] = await Promise.all([
+        progressService.getMyProgress(),
+        assignmentsService.getMyAssignments()
+      ])
+      setProgress(progressData)
+      setAssignments(assignmentsData)
+    } catch (error) {
+      console.error("Failed to load progress data:", error)
+      toast.error("Failed to load progress data")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const completedCount = progress.filter((p) => p.status === "completed").length
+  const inProgressCount = progress.filter((p) => p.status === "in-progress").length
+  const totalCourses = progress.length
 
   const avgCompletion =
     totalCourses > 0
       ? Math.round(
-          mockProgress.reduce((a, p) => a + p.completionRate, 0) / totalCourses
+          progress.reduce((a, p) => a + p.completionRate, 0) / totalCourses
         )
       : 0
 
-  const scoredItems = mockProgress.filter((p) => p.score > 0)
+  const scoredItems = progress.filter((p) => p.score > 0)
   const avgScore =
     scoredItems.length > 0
       ? Math.round(scoredItems.reduce((a, p) => a + p.score, 0) / scoredItems.length)
       : 0
 
-  const gradedAssignments = mockAssignments.filter((a) => a.status === "graded")
+  const gradedAssignments = assignments.filter((a) => a.status === "graded")
 
   return (
     <div className="space-y-6">

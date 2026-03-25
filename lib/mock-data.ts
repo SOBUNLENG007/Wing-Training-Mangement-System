@@ -72,7 +72,7 @@ export interface ProgressRecord {
 }
 
 export const mockUsers: User[] = [
-  { id: "1", name: "Admin User", email: "admin@wingbank.com", role: "admin", department: "HR" },
+  { id: "1", name: "Admin User", email: "demo.system.user@gmail.com", role: "admin", department: "HR" },
   { id: "2", name: "Sok Vicheka", email: "trainer@wingbank.com", role: "trainer", department: "IT Training" },
   { id: "3", name: "Chan Dara", email: "employee@wingbank.com", role: "employee", department: "Operations" },
 ]

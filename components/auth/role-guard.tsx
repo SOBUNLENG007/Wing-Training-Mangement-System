@@ -1,34 +1,25 @@
-"use client"
+"use client";
+import { useAuthStore } from "@/lib/auth-store";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { useAuth } from "@/lib/auth-store"
+export function RoleGuard({ children, allowedRoles }: { children: React.ReactNode, allowedRoles: string[] }) {
+  const user = useAuthStore((state) => state.user);
+  const router = useRouter();
+  const [mounted, setMounted] = useState(false);
 
-type Role = "admin" | "trainer" | "employee"
-
-export function RoleGuard({
-  allowed,
-  children,
-}: {
-  allowed: Role[]
-  children: React.ReactNode
-}) {
-  const { user, restoreSession } = useAuth()
-  const router = useRouter()
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
-    restoreSession()
-  }, [restoreSession])
-
-  useEffect(() => {
-    if (!user) return
-    if (!allowed.includes(user.role as Role)) {
-      router.replace("/dashboard")
+    if (mounted) {
+      if (!user) {
+        router.replace("/login");
+      } else if (!allowedRoles.map(r => r.toLowerCase()).includes(user.role.toLowerCase())) {
+        router.replace("/dashboard"); // No permission -> back to home
+      }
     }
-  }, [user, allowed, router])
+  }, [user, mounted, router, allowedRoles]);
 
-  if (!user) return null
-  if (!allowed.includes(user.role as Role)) return null
-
-  return <>{children}</>
+  if (!mounted || !user) return null;
+  return <>{children}</>;
 }

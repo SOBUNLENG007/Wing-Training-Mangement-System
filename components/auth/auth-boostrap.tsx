@@ -1,14 +1,14 @@
-"use client";
+// "use client";
 
-import { useEffect } from "react";
-import { useAuth } from "@/lib/auth-store";
+// import { useEffect } from "react";
+// import { useAuth } from "@/lib/auth-store";
 
-export function AuthBootstrap() {
-  const { restoreSession } = useAuth();
+// export function AuthBootstrap() {
+//   const { restoreSession } = useAuth();
 
-  useEffect(() => {
-    restoreSession();
-  }, [restoreSession]);
+//   useEffect(() => {
+//     restoreSession();
+//   }, [restoreSession]);
 
-  return null;
-}
+//   return null;
+// }
