@@ -139,7 +139,7 @@ export function AppSidebar({
   const handleLogoutConfirm = () => {
     logout()
     setShowLogoutConfirm(false)
-    router.replace("/")
+    router.replace("/") // Redirect to home page after logout
   }
 
   return (

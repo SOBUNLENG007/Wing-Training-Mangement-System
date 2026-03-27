@@ -87,6 +87,9 @@ function ReportsPageContent() {
           onSelect={handleDeptSelect}
         />
       )}
+    </div>
+  );
+}
 
 export default function ReportsPage() {
   return (

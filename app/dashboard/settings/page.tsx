@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "next/navigation"; 
 import { useAuth } from "@/lib/auth-store";
 
 import { ProfileForm, PasswordForm } from "@/lib/types/setting";
@@ -13,7 +13,7 @@ export default function SettingsPage() {
 
   const [hydrated, setHydrated] = useState(false);
 
-  // ── Bootstrap ──────────────────────────────────────────────────────────────
+  // ── Bootstrap ─────────────── 
   useEffect(() => { restoreSession(); setHydrated(true); }, [restoreSession]);
   useEffect(() => { if (hydrated && !user) router.push("/login"); }, [hydrated, user, router]);
 

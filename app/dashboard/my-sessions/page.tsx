@@ -1,5 +1,4 @@
  
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -59,7 +58,7 @@ function MySessionsPageContent() {
 
   // Load sessions on mount
   useEffect(() => {
-    loadSessions();
+    loadSessions(); 
   }, []);
 
   const loadSessions = async () => {
