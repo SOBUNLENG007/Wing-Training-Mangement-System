@@ -1,11 +1,29 @@
 import { api } from "@/lib/api";
 import type { TrainingSession } from "@/lib/types/session";
 
+type PaginatedSessions = {
+  payload: TrainingSession[];
+  total: number;
+};
+
 export const sessionsService = {
   // Get all sessions (paginated)
-  getAll: async (params?: any): Promise<TrainingSession[]> => {
+  getAll: async (params?: any): Promise<PaginatedSessions> => {
     const res = await api.get("/sessions", { params });
-    return res.data?.payload ?? res.data ?? [];
+    // If backend returns array, wrap it; else, use as is
+    if (Array.isArray(res.data?.payload)) {
+      return {
+        payload: res.data.payload,
+        total:
+          typeof res.data.total === "number"
+            ? res.data.total
+            : res.data.payload.length,
+      };
+    } else if (Array.isArray(res.data)) {
+      return { payload: res.data, total: res.data.length };
+    } else {
+      return { payload: [], total: 0 };
+    }
   },
 
   // Get session by ID

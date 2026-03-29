@@ -50,26 +50,21 @@ function SessionsPageContent() {
   useEffect(() => {
     loadSessions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter, search]); // Only refetch all on filter/search change
+  }, [page, size, filter, search]);
 
   const loadSessions = async () => {
     try {
       setLoading(true);
-      // Always fetch all, since backend does not paginate
+      // Send page and size for backend pagination (page is 1-based)
       const params = {
+        page: page + 1,
+        size,
         search,
         filter: filter !== "all" ? filter : undefined,
       };
-      const res = await sessionsService.getAll(params);
-      // Accept either direct array or { payload: array }
-      let sessionArr: TrainingSession[] = [];
-      if (Array.isArray(res)) {
-        sessionArr = res;
-      } else if (res && Array.isArray((res as any).payload)) {
-        sessionArr = (res as any).payload;
-      }
-      setSessions(sessionArr);
-      setTotal(sessionArr.length);
+      const { payload, total } = await sessionsService.getAll(params);
+      setSessions(payload);
+      setTotal(total);
     } catch (error) {
       console.error("Failed to load sessions:", error);
       toast.error("Failed to load training sessions");
@@ -79,8 +74,8 @@ function SessionsPageContent() {
   };
 
   // ── Derived list ──
-  // Filtering is handled server-side if supported, otherwise here
-  const visible = sessions.slice(page * size, (page + 1) * size);
+  // Use backend payload directly for visible sessions
+  const visible = sessions;
 
   // ── Handlers ───────────────────────────────────────────────────────────────
   async function handleCreate(payload: any) {
@@ -104,6 +99,48 @@ function SessionsPageContent() {
         data: error?.response?.data,
       });
       toast.error(String(errorMsg));
+    }
+  }
+
+  async function handleDelete(id: string) {
+    try {
+      await sessionsService.delete(parseInt(id));
+      setSessions((prev) => prev.filter((s) => s.id !== id));
+      setSelectedSession(null);
+      toast.success("Training session deleted successfully");
+    } catch (error) {
+      console.error("Failed to delete session:", error);
+      toast.error("Failed to delete training session");
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">
+            Training Sessions
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Create and manage training programs by department or team.
+          </p>
+        </div>
+        {canManage && (
+          <Button onClick={() => setShowCreate(true)} className="gap-2">
+            <Plus className="size-4" /> Create Session
+          </Button>
+        )}
+      </div>
+
+      {/* Search + Filter */}
+      <SessionFilters
+        search={search}
+        filter={filter}
+        onSearch={setSearch}
+        onFilter={setFilter}
+      />
+
       {/* Grid */}
       {loading ? (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -125,135 +162,87 @@ function SessionsPageContent() {
         <div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {visible.map((s) => (
-              <SessionCard key={s.id} session={s} onClick={setSelectedSession} />
+              <SessionCard
+                key={s.id}
+                session={s}
+                onClick={setSelectedSession}
+              />
             ))}
           </div>
           {/* Pagination UI */}
           <Pagination className="mt-6">
-            return (
-              <div className="space-y-6">
-                {/* Header */}
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <h1 className="text-2xl font-bold text-foreground">Training Sessions</h1>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Create and manage training programs by department or team.
-                    </p>
-                  </div>
-                  {canManage && (
-                    <Button onClick={() => setShowCreate(true)} className="gap-2">
-                      <Plus className="size-4" /> Create Session
-                    </Button>
-                  )}
-                </div>
-
-                {/* Search + Filter */}
-                <SessionFilters
-                  search={search}
-                  filter={filter}
-                  onSearch={setSearch}
-                  onFilter={setFilter}
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setPage((p) => Math.max(0, p - 1));
+                  }}
+                  aria-disabled={page === 0}
+                  tabIndex={page === 0 ? -1 : 0}
                 />
-
-                {/* Grid */}
-                {loading ? (
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                    {Array.from({ length: 9 }).map((_, i) => (
-                      <div key={i} className="space-y-3 rounded-lg border p-4">
-                        <Skeleton className="h-4 w-3/4" />
-                        <Skeleton className="h-3 w-1/2" />
-                        <Skeleton className="h-20 w-full" />
-                        <div className="flex gap-2">
-                          <Skeleton className="h-6 w-16" />
-                          <Skeleton className="h-6 w-16" />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : visible.length === 0 ? (
-                  <EmptyState />
-                ) : (
-                  <div>
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                      {visible.map((s) => (
-                        <SessionCard key={s.id} session={s} onClick={setSelectedSession} />
-                      ))}
-                    </div>
-                    {/* Pagination UI */}
-                    <Pagination className="mt-6">
-                      <PaginationContent>
-                        <PaginationItem>
-                          <PaginationPrevious
-                            href="#"
-                            onClick={e => {
-                              e.preventDefault();
-                              setPage(p => Math.max(0, p - 1));
-                            }}
-                            aria-disabled={page === 0}
-                            tabIndex={page === 0 ? -1 : 0}
-                          />
-                        </PaginationItem>
-                        {Array.from({ length: Math.ceil(total / size) }).map((_, i) => (
-                          <PaginationItem key={i}>
-                            <PaginationLink
-                              href="#"
-                              isActive={i === page}
-                              onClick={e => {
-                                e.preventDefault();
-                                setPage(i);
-                              }}
-                            >
-                              {i + 1}
-                            </PaginationLink>
-                          </PaginationItem>
-                        ))}
-                        <PaginationItem>
-                          <PaginationNext
-                            href="#"
-                            onClick={e => {
-                              e.preventDefault();
-                              setPage(p => (p + 1 < Math.ceil(total / size) ? p + 1 : p));
-                            }}
-                            aria-disabled={page + 1 >= Math.ceil(total / size)}
-                            tabIndex={page + 1 >= Math.ceil(total / size) ? -1 : 0}
-                          />
-                        </PaginationItem>
-                      </PaginationContent>
-                      <div className="ml-4 flex items-center text-xs text-slate-500">
-                        Total: {total}
-                      </div>
-                    </Pagination>
-                  </div>
-                )}
-
-                {/* Modals */}
-                <CreateSessionModal
-                  open={showCreate}
-                  onCloseAction={() => setShowCreate(false)}
-                  onSubmitAction={handleCreate}
-                  trainerName={user?.name ?? ""}
-                  trainerId={user?.id}
-                  departmentId={user?.departmentId}
-                  departmentName={user?.departmentName}
+              </PaginationItem>
+              {Array.from({ length: Math.ceil(total / size) }).map((_, i) => (
+                <PaginationItem key={i}>
+                  <PaginationLink
+                    href="#"
+                    isActive={i === page}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setPage(i);
+                    }}
+                  >
+                    {i + 1}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+              <PaginationItem>
+                <PaginationNext
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setPage((p) =>
+                      p + 1 < Math.ceil(total / size) ? p + 1 : p,
+                    );
+                  }}
+                  aria-disabled={page + 1 >= Math.ceil(total / size)}
+                  tabIndex={page + 1 >= Math.ceil(total / size) ? -1 : 0}
                 />
-
-                <SessionDetailModal
-                  session={selectedSession}
-                  canManage={canManage}
-                  onClose={() => setSelectedSession(null)}
-                  onDelete={handleDelete}
-                />
-              </div>
-            );
+              </PaginationItem>
+            </PaginationContent>
+            <div className="ml-4 flex items-center text-xs text-slate-500">
+              Total: {total}
+            </div>
           </Pagination>
         </div>
       )}
+
+      {/* Modals */}
+      <CreateSessionModal
+        open={showCreate}
+        onCloseAction={() => setShowCreate(false)}
+        onSubmitAction={handleCreate}
+        trainerName={user?.name ?? ""}
+        trainerId={user?.id}
+        departmentId={user?.departmentId}
+        departmentName={user?.departmentName}
+      />
+
+      <SessionDetailModal
+        session={selectedSession}
+        canManage={canManage}
+        onClose={() => setSelectedSession(null)}
+        onDelete={handleDelete}
+      />
     </div>
   );
 }
 
 export default function SessionsPage() {
+  return (
     <RoleGuard allowed={["admin", "trainer"]}>
       <SessionsPageContent />
     </RoleGuard>
+  );
 }
