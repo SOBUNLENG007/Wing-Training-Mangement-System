@@ -1,5 +1,3 @@
- 
-
 "use client";
 
 import { useEffect, useMemo, useState, useCallback } from "react";
@@ -18,6 +16,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationPrevious,
+  PaginationNext,
+} from "@/components/ui/pagination";
 import {
   Bell,
   FileText,
@@ -104,13 +110,17 @@ function NotificationCard({
   return (
     <Card
       className={`group cursor-pointer transition-all hover:shadow-md ${
-        !notification.read ? "border-blue-200 bg-blue-50/30" : "border-slate-100"
+        !notification.read
+          ? "border-blue-200 bg-blue-50/30"
+          : "border-slate-100"
       }`}
       onClick={() => !notification.read && onMarkRead(notification.id)}
     >
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
-          <div className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${cfg.color}`}>
+          <div
+            className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${cfg.color}`}
+          >
             <TypeIcon className="size-5" />
           </div>
 
@@ -124,10 +134,14 @@ function NotificationCard({
                 >
                   {notification.title}
                 </p>
-                {!notification.read && <span className="size-2 shrink-0 rounded-full bg-blue-500" />}
+                {!notification.read && (
+                  <span className="size-2 shrink-0 rounded-full bg-blue-500" />
+                )}
               </div>
 
-              <Badge className={`shrink-0 border-0 px-2 py-0 text-[10px] ${cfg.color}`}>
+              <Badge
+                className={`shrink-0 border-0 px-2 py-0 text-[10px] ${cfg.color}`}
+              >
                 {cfg.label}
               </Badge>
             </div>
@@ -193,6 +207,9 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("unread");
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(10);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
     restoreSession();
@@ -213,37 +230,47 @@ export default function NotificationsPage() {
   const fetchNotifications = useCallback(async () => {
     setLoading(true);
     setError(null);
-
     try {
-      const res = await getNotifications(0, 50);
-      const data: Notification[] = res?.payload?.content ?? res?.payload ?? res ?? [];
+      const res = await getNotifications(page, size);
+      const data: Notification[] = res?.payload?.content ?? res?.payload ?? [];
       setNotifications(data);
+      setTotal(res?.payload?.total ?? data.length);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to load notifications");
+      setError(
+        err instanceof Error ? err.message : "Failed to load notifications",
+      );
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page, size]);
 
   useEffect(() => {
     if (user) {
       fetchNotifications();
     }
   }, [user, fetchNotifications]);
+  // Pagination controls
+  const totalPages = Math.ceil(total / size);
 
-  const unread = useMemo(() => notifications.filter((n) => !n.read), [notifications]);
-  const read = useMemo(() => notifications.filter((n) => n.read), [notifications]);
+  const unread = useMemo(
+    () => notifications.filter((n) => !n.read),
+    [notifications],
+  );
+  const read = useMemo(
+    () => notifications.filter((n) => n.read),
+    [notifications],
+  );
 
   async function handleMarkRead(id: string) {
     setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+      prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
     );
 
     try {
       await markNotificationRead(id);
     } catch {
       setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, read: false } : n))
+        prev.map((n) => (n.id === id ? { ...n, read: false } : n)),
       );
     }
   }
@@ -372,16 +399,25 @@ export default function NotificationsPage() {
                 action: "Send Now",
               },
             ].map((trigger) => (
-              <Card key={trigger.title} className="transition-shadow hover:shadow-md">
+              <Card
+                key={trigger.title}
+                className="transition-shadow hover:shadow-md"
+              >
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
-                    <div className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${trigger.color}`}>
+                    <div
+                      className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${trigger.color}`}
+                    >
                       <trigger.icon className="size-4" />
                     </div>
 
                     <div className="flex-1">
-                      <p className="text-sm font-semibold text-slate-800">{trigger.title}</p>
-                      <p className="mt-0.5 text-xs text-slate-500">{trigger.detail}</p>
+                      <p className="text-sm font-semibold text-slate-800">
+                        {trigger.title}
+                      </p>
+                      <p className="mt-0.5 text-xs text-slate-500">
+                        {trigger.detail}
+                      </p>
 
                       <Button
                         variant="ghost"
@@ -400,8 +436,55 @@ export default function NotificationsPage() {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
+        {/* Pagination Controls */}
+        <Pagination className="mt-4">
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setPage((p) => Math.max(0, p - 1));
+                }}
+                aria-disabled={page === 0}
+                tabIndex={page === 0 ? -1 : 0}
+              />
+            </PaginationItem>
+            {Array.from({ length: totalPages }).map((_, i) => (
+              <PaginationItem key={i}>
+                <PaginationLink
+                  href="#"
+                  isActive={i === page}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setPage(i);
+                  }}
+                >
+                  {i + 1}
+                </PaginationLink>
+              </PaginationItem>
+            ))}
+            <PaginationItem>
+              <PaginationNext
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setPage((p) => (p + 1 < totalPages ? p + 1 : p));
+                }}
+                aria-disabled={page + 1 >= totalPages}
+                tabIndex={page + 1 >= totalPages ? -1 : 0}
+              />
+            </PaginationItem>
+          </PaginationContent>
+          <div className="ml-4 flex items-center text-xs text-slate-500">
+            Total: {total}
+          </div>
+        </Pagination>
         <TabsList className="border border-slate-200 bg-slate-50">
-          <TabsTrigger value="unread" className="gap-1.5 data-[state=active]:bg-white">
+          <TabsTrigger
+            value="unread"
+            className="gap-1.5 data-[state=active]:bg-white"
+          >
             <Mail className="size-3.5" />
             Unread
             {unread.length > 0 && (
@@ -411,12 +494,18 @@ export default function NotificationsPage() {
             )}
           </TabsTrigger>
 
-          <TabsTrigger value="read" className="gap-1.5 data-[state=active]:bg-white">
+          <TabsTrigger
+            value="read"
+            className="gap-1.5 data-[state=active]:bg-white"
+          >
             <MailOpen className="size-3.5" />
             Read ({read.length})
           </TabsTrigger>
 
-          <TabsTrigger value="all" className="gap-1.5 data-[state=active]:bg-white">
+          <TabsTrigger
+            value="all"
+            className="gap-1.5 data-[state=active]:bg-white"
+          >
             <Bell className="size-3.5" />
             All ({notifications.length})
           </TabsTrigger>

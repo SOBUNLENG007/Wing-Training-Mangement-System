@@ -326,7 +326,7 @@ const user = useAuthStore((state) => state.user)
 
         {/* Profile Link */}
         <Link
-          href="/dashboard/settings/profile"
+          href="/dashboard/settings/"
           className="flex items-center gap-3 rounded-xl px-1 py-1 transition-opacity hover:opacity-80"
         >
           <Avatar className="h-10 w-10 border border-slate-100 shadow-sm">

@@ -10,8 +10,6 @@ export const api = axios.create({
   timeout: 10000,
 });
 
-
-
 // ---------- REQUEST ----------
 api.interceptors.request.use((config) => {
   const token = getAccessToken();
@@ -29,13 +27,23 @@ api.interceptors.response.use(
   (error) => {
     // Log detailed error information
     if (error.response) {
+      const { config, status, statusText, data } = error.response;
+      const url = config?.url || error.config?.url || "Unknown URL";
+      const method = config?.method || error.config?.method || "Unknown method";
+      const hasBody = data && Object.keys(data).length > 0;
       console.error("❌ API Error Response:", {
-        status: error.response.status,
-        statusText: error.response.statusText,
-        message: error.response.data?.message,
-        error: error.response.data?.error,
-        errors: error.response.data?.errors,
-        body: error.response.data,
+        url,
+        method,
+        status: status || "No status",
+        statusText: statusText || "No statusText",
+        message:
+          data?.message ||
+          (!hasBody
+            ? "No error message returned from server"
+            : "Unknown error from server"),
+        error: data?.error,
+        errors: data?.errors,
+        body: hasBody ? data : "Empty response body",
       });
     } else if (error.request) {
       console.error("❌ No Response Received:", error.request);

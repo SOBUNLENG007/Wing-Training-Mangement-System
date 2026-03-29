@@ -2,10 +2,13 @@ import { api } from "@/lib/api";
 import type { Material } from "@/lib/types/material";
 
 export const materialsService = {
-  // Get all materials
-  getAll: async (): Promise<Material[]> => {
-    const res = await api.get("/materials");
-    return res.data;
+  // Get all materials (paginated)
+  getAll: async (params?: any): Promise<Material[]> => {
+    const res = await api.get("/materials", { params });
+    // Always return an array
+    if (Array.isArray(res.data)) return res.data;
+    if (Array.isArray(res.data?.payload)) return res.data.payload;
+    return [];
   },
 
   // Get material by ID
@@ -14,54 +17,29 @@ export const materialsService = {
     return res.data;
   },
 
-  // Get materials by session
-  getBySession: async (sessionId: string): Promise<Material[]> => {
-    const res = await api.get(`/materials/session/${sessionId}`);
+  // Get materials by session (paginated)
+  getBySession: async (
+    sessionId: string,
+    params?: any,
+  ): Promise<Material[]> => {
+    const res = await api.get(`/materials/session/${sessionId}`, { params });
     return res.data;
   },
 
-  // Create new material
+  // Create new material (ADMIN or TRAINER)
   create: async (data: Omit<Material, "id">): Promise<Material> => {
     const res = await api.post("/materials", data);
     return res.data;
   },
 
-  // Update material
+  // Update material (ADMIN or TRAINER)
   update: async (id: string, data: Partial<Material>): Promise<Material> => {
     const res = await api.put(`/materials/${id}`, data);
     return res.data;
   },
 
-  // Delete material
+  // Delete material (ADMIN or TRAINER)
   delete: async (id: string): Promise<void> => {
     await api.delete(`/materials/${id}`);
-  },
-
-  // Upload file
-  uploadFile: async (file: File, sessionId: string): Promise<Material> => {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("sessionId", sessionId);
-
-    const res = await api.post("/materials/upload", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
-    return res.data;
-  },
-
-  // Download material
-  download: async (id: string): Promise<Blob> => {
-    const res = await api.get(`/materials/${id}/download`, {
-      responseType: "blob",
-    });
-    return res.data;
-  },
-
-  // Get materials by department
-  getByDepartment: async (department: string): Promise<Material[]> => {
-    const res = await api.get(`/materials/department/${department}`);
-    return res.data;
   },
 };

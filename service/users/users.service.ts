@@ -56,8 +56,6 @@
 //   },
 // };
 
-
-
 import { api } from "@/lib/api";
 import type { User } from "@/lib/types/user"; // ✅ FIXED
 
@@ -67,16 +65,39 @@ const extract = <T>(res: any): T => {
 };
 
 export const usersService = {
-  // ✅ Get all users
-  getAll: async (): Promise<User[]> => {
-    const res = await api.get("/users");
+  // Get all users (paginated, ADMIN)
+  getAll: async (params?: any): Promise<User[]> => {
+    const res = await api.get("/users", { params });
     return extract<User[]>(res) || [];
   },
 
-  // ✅ Get user by ID
+  // Get current authenticated user
+  getMe: async (): Promise<User> => {
+    const res = await api.get("/users/me");
+    return extract<User>(res);
+  },
+
+  // Get user by ID
   getById: async (id: string): Promise<User> => {
     const res = await api.get(`/users/${id}`);
     return extract<User>(res);
+  },
+
+  // Create a new user
+  create: async (data: Omit<User, "id">): Promise<User> => {
+    const res = await api.post("/users", data);
+    return extract<User>(res);
+  },
+
+  // Update a user
+  update: async (id: string, data: Partial<User>): Promise<User> => {
+    const res = await api.put(`/users/${id}`, data);
+    return extract<User>(res);
+  },
+
+  // Delete a user
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`/users/${id}`);
   },
 
   // ✅ Create user

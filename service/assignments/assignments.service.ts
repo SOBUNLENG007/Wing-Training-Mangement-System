@@ -2,9 +2,18 @@ import { api } from "@/lib/api";
 import type { Assignment } from "@/lib/types/assignment";
 
 export const assignmentsService = {
-  // Get all assignments
-  getAll: async (): Promise<Assignment[]> => {
-    const res = await api.get("/assignments");
+  // Get all assignments (paginated)
+  getAll: async (params?: any): Promise<Assignment[]> => {
+    const res = await api.get("/assignments", { params });
+    return res.data;
+  },
+
+  // Get assignments by session (paginated)
+  getBySession: async (
+    sessionId: string,
+    params?: any,
+  ): Promise<Assignment[]> => {
+    const res = await api.get(`/assignments/session/${sessionId}`, { params });
     return res.data;
   },
 
@@ -14,48 +23,23 @@ export const assignmentsService = {
     return res.data;
   },
 
-  // Get assignments by session
-  getBySession: async (sessionId: string): Promise<Assignment[]> => {
-    const res = await api.get(`/assignments/session/${sessionId}`);
-    return res.data;
-  },
-
-  // Create new assignment
+  // Create a new assignment (ADMIN or TRAINER)
   create: async (data: Omit<Assignment, "id">): Promise<Assignment> => {
     const res = await api.post("/assignments", data);
     return res.data;
   },
 
-  // Update assignment
-  update: async (id: string, data: Partial<Assignment>): Promise<Assignment> => {
+  // Update an assignment (ADMIN or TRAINER)
+  update: async (
+    id: string,
+    data: Partial<Assignment>,
+  ): Promise<Assignment> => {
     const res = await api.put(`/assignments/${id}`, data);
     return res.data;
   },
 
-  // Delete assignment
+  // Delete an assignment (ADMIN or TRAINER)
   delete: async (id: string): Promise<void> => {
     await api.delete(`/assignments/${id}`);
-  },
-
-  // Submit assignment
-  submit: async (assignmentId: string, submission: any): Promise<void> => {
-    await api.post(`/assignments/${assignmentId}/submit`, submission);
-  },
-
-  // Grade assignment
-  grade: async (assignmentId: string, grade: { score: number; feedback?: string }): Promise<void> => {
-    await api.post(`/assignments/${assignmentId}/grade`, grade);
-  },
-
-  // Get assignments by status
-  getByStatus: async (status: string): Promise<Assignment[]> => {
-    const res = await api.get(`/assignments/status/${status}`);
-    return res.data;
-  },
-
-  // Get my assignments (for current user)
-  getMyAssignments: async (): Promise<Assignment[]> => {
-    const res = await api.get("/assignments/my");
-    return res.data;
   },
 };
