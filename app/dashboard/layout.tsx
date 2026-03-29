@@ -34,7 +34,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* --- Sidebar Component --- */}
         <AppSidebar 
           collapsed={collapsed} 
-          onToggle={() => setCollapsed(!collapsed)} 
+          onToggleAction={() => setCollapsed(!collapsed)} 
         />
 
         {/* --- Main Content Area --- */}
@@ -42,7 +42,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           className={cn(
             "flex flex-1 flex-col transition-all duration-300",
             // This margin must match your sidebar widths
-            collapsed ? "ml-[68px]" : "ml-[260px]"
+            collapsed ? "ml-17" : "ml-65"
           )}
         >
           {/* --- Top Header --- */}

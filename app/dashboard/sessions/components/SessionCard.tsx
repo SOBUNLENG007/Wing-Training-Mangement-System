@@ -11,8 +11,8 @@ type Props = {
 };
 
 export function SessionCard({ session, onClick }: Props) {
-  const cfg        = STATUS_CONFIG[session.status];
-  const StatusIcon = STATUS_ICONS[session.status];
+  const cfg        = STATUS_CONFIG[session.status] ?? { label: "Unknown", color: "bg-slate-100 text-slate-500 border-0" };
+  const StatusIcon = STATUS_ICONS[session.status] ?? BookOpen;
 
   return (
     <Card

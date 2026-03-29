@@ -17,6 +17,7 @@ export const reportsService = {
     const res = await api.get("/reports/completion", { params });
     return res.data;
   },
+  
 
   // Get attendance report
   getAttendanceReport: async (params?: {

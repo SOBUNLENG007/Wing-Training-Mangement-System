@@ -2,8 +2,11 @@
 
 export type JwtPayload = {
   sub?: string;
-  name?: string; // ✅ add this
+  name?: string;
+  id?: number;
   role?: "ADMIN" | "EMPLOYEE" | "TRAINER";
+  departmentId?: number;
+  departmentName?: string;
   exp?: number;
 };
 
@@ -44,15 +47,21 @@ export function decodeToken(token: string): JwtPayload | null {
         .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
         .join(""),
     );
-    return JSON.parse(jsonPayload) as JwtPayload;
-  } catch {
+    const payload = JSON.parse(jsonPayload);
+    console.log("🔍 JWT Payload decoded:", payload);
+    return payload as JwtPayload;
+  } catch (error) {
+    console.error("❌ Failed to decode token:", error);
     return null;
   }
 }
 
 export function getPayload(): JwtPayload | null {
   const token = getAccessToken();
-  return token ? decodeToken(token) : null;
+  if (!token) return null;
+  const payload = decodeToken(token);
+  console.log("📋 getPayload result:", payload);
+  return payload;
 }
 
 export function getRole(): string | null {

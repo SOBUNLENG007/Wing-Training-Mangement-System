@@ -113,10 +113,10 @@ const menuItems: {
 
 export function AppSidebar({
   collapsed,
-  onToggle,
+  onToggleAction,
 }: {
   collapsed: boolean
-  onToggle: () => void
+  onToggleAction: () => void
 }) {
   const pathname = usePathname()
   const router = useRouter()
@@ -139,6 +139,7 @@ export function AppSidebar({
   const handleLogoutConfirm = () => {
     logout()
     setShowLogoutConfirm(false)
+    localStorage.clear() // Clear local storage on logout
     router.replace("/") // Redirect to home page after logout
   }
 
@@ -147,7 +148,7 @@ export function AppSidebar({
       <aside
         className={cn(
           "fixed left-0 top-0 z-40 flex h-screen flex-col border-r bg-[#06152d] text-white transition-all duration-300",
-          collapsed ? "w-[68px]" : "w-[260px]"
+          collapsed ? "w-17" : "w-65"
         )}
       >
         {/* Header */}
@@ -170,7 +171,7 @@ export function AppSidebar({
 
             <button
               type="button"
-              onClick={onToggle}
+              onClick={onToggleAction}
               className="flex size-8 shrink-0 items-center justify-center rounded-lg text-white/80 transition-colors hover:bg-white/10 hover:text-white"
               aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             >

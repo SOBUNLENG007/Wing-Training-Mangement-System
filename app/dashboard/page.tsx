@@ -478,13 +478,13 @@ export default function DashboardPage() {
 
   switch (user.role?.toLowerCase()) {
     case "admin":
-      return <AdminDashboard userName={user.name} />
+      return <AdminDashboard userName={user.name || user.email || "Admin"} />
 
     case "trainer":
-      return <TrainerDashboard userName={user.name} />
+      return <TrainerDashboard userName={user.name || user.email || "Trainer"} />
 
     case "employee":
-      return <EmployeeDashboard userName={user.name} />
+      return <EmployeeDashboard userName={user.name || user.email || "Employee"} />
 
     default:
       return (

@@ -27,6 +27,22 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Log detailed error information
+    if (error.response) {
+      console.error("❌ API Error Response:", {
+        status: error.response.status,
+        statusText: error.response.statusText,
+        message: error.response.data?.message,
+        error: error.response.data?.error,
+        errors: error.response.data?.errors,
+        body: error.response.data,
+      });
+    } else if (error.request) {
+      console.error("❌ No Response Received:", error.request);
+    } else {
+      console.error("❌ Error:", error.message);
+    }
+
     if (error.response?.status === 401) {
       clearAuth();
 

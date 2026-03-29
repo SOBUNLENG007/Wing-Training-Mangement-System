@@ -21,6 +21,11 @@ import { toast } from "sonner";
 function SessionsPageContent() {
   const { user } = useAuth();
 
+  // Debug: Log user data
+  useEffect(() => {
+    console.log("🔐 Current authenticated user:", user);
+  }, [user]);
+
   const [sessions, setSessions] = useState<TrainingSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -48,30 +53,45 @@ function SessionsPageContent() {
     }
   };
 
-  // ── Derived list ───────────────────────────────────────────────────────────
+  // ── Derived list ──
   const visible = sessions.filter((s) => {
-    const matchSearch = s.title.toLowerCase().includes(search.toLowerCase()) ||
-                        s.department.toLowerCase().includes(search.toLowerCase());
-    const matchFilter = filter === "all" || s.status === filter;
+    const title = s.title || "";
+    const department = s.department || "";
+    const status = s.status || "upcoming";
+
+    const matchSearch = title.toLowerCase().includes(search.toLowerCase()) ||
+                        department.toLowerCase().includes(search.toLowerCase());
+    const matchFilter = filter === "all" || status === filter;
     return matchSearch && matchFilter;
   });
 
   // ── Handlers ───────────────────────────────────────────────────────────────
-  async function handleCreate(newSession: Omit<TrainingSession, "id">) {
+  async function handleCreate(payload: any) {
     try {
-      const created = await sessionsService.create(newSession);
+      console.log("🔄 Creating session with payload:", payload);
+      const created = await sessionsService.create(payload);
       setSessions((prev) => [created, ...prev]);
       setShowCreate(false);
       toast.success("Training session created successfully");
-    } catch (error) {
-      console.error("Failed to create session:", error);
-      toast.error("Failed to create training session");
+    } catch (error: any) {
+      console.error("❌ Failed to create session:", error);
+      const errorMsg = error?.response?.data?.message || 
+                       error?.response?.data?.error ||
+                       error?.response?.data?.errors?.[0] ||
+                       error?.message ||
+                       "Failed to create training session";
+      console.error("📋 Error Details:", {
+        message: errorMsg,
+        status: error?.response?.status,
+        data: error?.response?.data
+      });
+      toast.error(String(errorMsg));
     }
   }
 
   async function handleDelete(id: string) {
     try {
-      await sessionsService.delete(id);
+      await sessionsService.delete(parseInt(id));
       setSessions((prev) => prev.filter((s) => s.id !== id));
       setSelectedSession(null);
       toast.success("Training session deleted successfully");
@@ -135,9 +155,12 @@ function SessionsPageContent() {
       {/* Modals */}
       <CreateSessionModal
         open={showCreate}
-        onClose={() => setShowCreate(false)}
-        onSubmit={handleCreate}
+        onCloseAction={() => setShowCreate(false)}
+        onSubmitAction={handleCreate}
         trainerName={user?.name ?? ""}
+        trainerId={user?.id}
+        departmentId={user?.departmentId}
+        departmentName={user?.departmentName}
       />
 
       <SessionDetailModal

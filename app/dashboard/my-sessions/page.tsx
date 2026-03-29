@@ -64,7 +64,7 @@ function MySessionsPageContent() {
   const loadSessions = async () => {
     try {
       setLoading(true);
-      const data = await sessionsService.getAll();
+      const data = await sessionsService.getMySessions();
       setSessions(data);
     } catch (error) {
       console.error("Failed to load sessions:", error);

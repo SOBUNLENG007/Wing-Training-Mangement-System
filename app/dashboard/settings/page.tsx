@@ -40,12 +40,12 @@ export default function SettingsPage() {
       phone:     "",
       birthDate: "",
       gender:    "",
-      address:   user.department ?? "",
+      address:   user.departmentName ?? "",
     });
     setAvatarPreview(defaultAvatar);
   }, [user, nameParts, defaultAvatar]);
 
-  // ── Handlers ───────────────────────────────────────────────────────────────
+  // ── Handlers ─────── 
   function handleSaveProfile() {
     const payload = { ...profile, profileImageName: avatarFile?.name ?? null };
     console.log("Save profile:", payload);
@@ -55,7 +55,7 @@ export default function SettingsPage() {
     console.log("Change password:", password);
   }
 
-  // ── Guard ──────────────────────────────────────────────────────────────────
+  // ── Guard ──────── 
   if (!hydrated || !user) return null;
 
   return (

@@ -10,11 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export function LoginForm({
-  onSwitchToRegister,
-  onSwitchToForgotPassword,
+  onSwitchToRegisterAction,
+  onSwitchToForgotPasswordAction,
 }: {
-  onSwitchToRegister: () => void;
-  onSwitchToForgotPassword?: () => void;
+  onSwitchToRegisterAction: () => void;
+  onSwitchToForgotPasswordAction?: () => void;
 }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,8 +36,8 @@ export function LoginForm({
       const response = await authService.login({ email, password });
 
       // 2. Save tokens to Zustand + LocalStorage
-      const { accessToken, refreshToken } = response.payload;
-      login({ accessToken, refreshToken });
+      const { accessToken, refreshToken, user } = response.payload;
+      login({ accessToken, refreshToken , user}); // ✅ Zustand store updates and persists to localStorage
 
       // 3. Redirect
       router.push("/dashboard");
@@ -125,7 +125,7 @@ export function LoginForm({
             </label>
             <button
               type="button"
-              onClick={onSwitchToForgotPassword}
+              onClick={onSwitchToForgotPasswordAction}
               className="text-sm font-medium text-red-500 transition-colors hover:text-red-600 hover:underline cursor-pointer"
             >
               Forgot password?
@@ -152,7 +152,7 @@ export function LoginForm({
           Don&apos;t have an account?{" "}
           <button
             type="button"
-            onClick={onSwitchToRegister}
+            onClick={onSwitchToRegisterAction}
             className="font-semibold text-blue-600 transition-colors hover:text-blue-700 hover:underline cursor-pointer"
           >
             Register

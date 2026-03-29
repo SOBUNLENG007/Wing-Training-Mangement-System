@@ -22,7 +22,7 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen">
       {/* Left Branding Panel */}
-      <div className="hidden lg:flex lg:w-[480px] xl:w-[540px] flex-col justify-between bg-blue-600 p-10 text-white">
+      <div className="hidden lg:flex lg:w-120 xl:w-135 flex-col justify-between bg-blue-600 p-10 text-white">
         <div className="flex items-center gap-3">
           <div className="flex size-12 items-center justify-center rounded-lg bg-white/15">
             <GraduationCap className="size-6" />
@@ -74,12 +74,12 @@ export default function LoginPage() {
         <div className="w-full max-w-lg space-y-6">
           {mode === "login" && (
             <LoginForm
-              onSwitchToRegister={() => setMode("register")}
-              onSwitchToForgotPassword={() => setMode("forgot")}
+              onSwitchToRegisterAction={() => setMode("register")}
+              onSwitchToForgotPasswordAction={() => setMode("forgot")}
             />
           )}
           {mode === "register" && (
-            <RegisterForm onSwitchToLogin={() => setMode("login")} />
+            <RegisterForm onSwitchToLoginAction={() => setMode("login")} />
           )}
           {mode === "forgot" && (
             <ForgotPasswordForm onSwitchToLogin={() => setMode("login")} />

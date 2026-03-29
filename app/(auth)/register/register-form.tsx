@@ -407,9 +407,9 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export function RegisterForm({
-  onSwitchToLogin,
+  onSwitchToLoginAction,
 }: {
-  onSwitchToLogin: () => void;
+  onSwitchToLoginAction: () => void;
 }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -459,7 +459,7 @@ export function RegisterForm({
       }
 
       setSuccess(true);
-      setTimeout(onSwitchToLogin, 1500);
+      setTimeout(onSwitchToLoginAction, 1500);
     } catch (_err) {
       setApiError("Something went wrong. Cannot connect to WTMS backend.");
     }
@@ -698,7 +698,7 @@ export function RegisterForm({
           Already have an account?{" "}
           <button
             type="button"
-            onClick={onSwitchToLogin}
+            onClick={onSwitchToLoginAction}
             className="font-semibold text-blue-600 transition-colors hover:text-blue-700 hover:underline"
           >
             Log in
