@@ -151,9 +151,15 @@ function MaterialsPageContent() {
   };
 
   const filtered = materials.filter((m) => {
+    // Defensive: handle missing/null fields
+    const title = (m.title || "").toString().toLowerCase();
+    const sessionTitle = (m.sessionTitle || "").toString().toLowerCase();
+    const searchValue = search.trim().toLowerCase();
+    // If search is empty, match all
     const matchesSearch =
-      m.title.toLowerCase().includes(search.toLowerCase()) ||
-      m.sessionTitle.toLowerCase().includes(search.toLowerCase());
+      !searchValue ||
+      title.includes(searchValue) ||
+      sessionTitle.includes(searchValue);
     const matchesType = typeFilter === "all" || m.type === typeFilter;
     return matchesSearch && matchesType;
   });
