@@ -14,19 +14,31 @@ type Props = {
 };
 
 export function UserModal({ user: u, isAdmin, onClose }: Props) {
+    // Placeholder handlers for button actions
+    const handleEditProfile = () => {
+      // TODO: Implement edit profile logic (open modal or navigate)
+      alert(`Edit Profile for ${getFullName(u)}`);
+    };
+
+    const handleViewFullReport = () => {
+      // TODO: Implement view full report logic (open modal or navigate)
+      alert(`View Full Report for ${getFullName(u)}`);
+    };
+  const sessionsCount =
+    typeof u.sessions === "number" && !isNaN(u.sessions) ? u.sessions : 0;
   const info = [
     { icon: Mail, label: "Email", value: u.email },
-    { icon: Phone, label: "Phone", value: u.phone_number },
+    { icon: Phone, label: "Phone", value: u.phoneNumber },
     { icon: MapPin, label: "Address", value: u.address },
     {
       icon: Building,
       label: "Department",
-      value: `${u.department_name} (ID: ${u.department_id})`,
+      value: `${u.departmentName}`,
     },
     {
       icon: BookOpen,
       label: "Sessions",
-      value: `Involved in ${u.sessions} active sessions`,
+      value: `Involved in ${sessionsCount} active sessions`,
     },
   ];
 
@@ -36,7 +48,7 @@ export function UserModal({ user: u, isAdmin, onClose }: Props) {
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl animate-in zoom-in-95 duration-200"
+        className="w-full max-w-xl overflow-hidden rounded-xl bg-white shadow-2xl animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Banner */}
@@ -51,18 +63,33 @@ export function UserModal({ user: u, isAdmin, onClose }: Props) {
 
         <div className="relative px-6 pb-8 pt-0">
           {/* Avatar overlapping banner */}
-          <div className="absolute -top-12 left-6">
+          <div className="flex flex-col items-center gap-3">
             <Avatar user={u} size="lg" />
-          </div>
-
-          {/* Name + badges */}
-          <div className="mb-5 mt-14">
             <h2 className="text-2xl font-bold text-slate-900">
               {getFullName(u)}
             </h2>
+          </div>
+
+          <div className="mb-5 mt-14">
             <div className="mt-2 flex items-center gap-2">
               <RoleBadge role={u.role} />
-              <StatusBadge status={u.status} />
+              {(() => {
+                let status: string;
+                if (typeof u.status === "boolean") {
+                  status = u.status ? "Active" : "Inactive";
+                } else {
+                  const normalized = String(u.status).trim().toLowerCase();
+                  status = normalized === "active" ? "Active" : "Inactive";
+                }
+                const isActive = status === "Active";
+                return (
+                  <span
+                    className={`ml-2 bg-gray-200 p-0.5 rounded-md px-2 text-xs font-semibold ${isActive ? "text-green-600" : "text-red-500"}`}
+                  >
+                    {status}
+                  </span>
+                );
+              })()}
             </div>
           </div>
 
@@ -89,11 +116,14 @@ export function UserModal({ user: u, isAdmin, onClose }: Props) {
                 <Button
                   variant="outline"
                   className="h-11 flex-1 rounded-xl border-slate-200"
-                  onClick={onClose}
+                  onClick={handleEditProfile}
                 >
                   Edit Profile
                 </Button>
-                <Button className="h-11 flex-1 rounded-xl bg-[#1f6fff] text-white shadow-sm hover:bg-blue-700">
+                <Button
+                  className="h-11 flex-1 rounded-xl bg-[#1f6fff] text-white shadow-sm hover:bg-blue-700"
+                  onClick={handleViewFullReport}
+                >
                   View Full Report
                 </Button>
               </>

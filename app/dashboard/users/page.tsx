@@ -44,6 +44,8 @@ type AddUserForm = {
   password: string;
   phoneNumber: string;
   address: string;
+  dateOfBirth: string;
+  gender: string;
   departmentId: number;
 };
 
@@ -188,6 +190,41 @@ function AddUserModal({
               placeholder="Address"
               className="w-full border rounded px-3 py-2"
             />
+          </div>
+          <div className="flex flex-col">
+            <label
+              htmlFor="dateOfBirth"
+              className="mb-1 text-xs font-semibold text-slate-600"
+            >
+              Date of Birth
+            </label>
+            <input
+              id="dateOfBirth"
+              type="date"
+              {...register("dateOfBirth", { required: true })}
+              className="w-full border rounded px-3 py-2"
+            />
+          </div>
+          <div className="flex flex-col">
+            <label
+              htmlFor="gender"
+              className="mb-1 text-xs font-semibold text-slate-600"
+            >
+              Gender
+            </label>
+            <select
+              id="gender"
+              {...register("gender", { required: true })}
+              className="w-full border rounded px-3 py-2"
+              defaultValue=""
+            >
+              <option value="" disabled>
+                Select gender
+              </option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
           </div>
           <div className="flex flex-col col-span-2">
             <label
