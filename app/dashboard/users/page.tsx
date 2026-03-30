@@ -11,8 +11,19 @@ import { User } from "@/lib/types/user";
 import { filterUsers } from "./utils";
 import { UserTableRow } from "./components/UserTableRow";
 import { UserModal } from "./components/UserModal";
+import { useForm } from "react-hook-form";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import {
+  departmentService,
+  Department,
+} from "@/service/departments/department.service";
 
 // Columns
 const COLUMNS = [
@@ -26,6 +37,182 @@ const COLUMNS = [
   "Actions",
 ];
 
+type AddUserForm = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  phoneNumber: string;
+  address: string;
+  departmentId: number;
+};
+
+function AddUserModal({
+  open,
+  onClose,
+  onAdd,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onAdd: (user: AddUserForm) => void;
+}) {
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { isSubmitting },
+  } = useForm<AddUserForm>();
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [loadingDepartments, setLoadingDepartments] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    setLoadingDepartments(true);
+    departmentService
+      .getAll()
+      .then((data) => setDepartments(Array.isArray(data) ? data : []))
+      .finally(() => setLoadingDepartments(false));
+  }, [open]);
+
+  const onSubmit = (data: AddUserForm) => {
+    onAdd(data);
+    reset();
+  };
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="grid max-w-md gap-4">
+        <DialogHeader className="mb-4">
+          <DialogTitle className="text-center">Add New User</DialogTitle>
+        </DialogHeader>
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="space-y-3 grid-cols-2 grid gap-4"
+        >
+          <div className="flex flex-col">
+            <label
+              htmlFor="firstName"
+              className="mb-1 text-xs font-semibold text-slate-600"
+            >
+              First Name
+            </label>
+            <input
+              id="firstName"
+              {...register("firstName", { required: true })}
+              placeholder="First Name"
+              className="w-full border rounded px-3 py-2"
+            />
+          </div>
+          <div className="flex flex-col">
+            <label
+              htmlFor="lastName"
+              className="mb-1 text-xs font-semibold text-slate-600"
+            >
+              Last Name
+            </label>
+            <input
+              id="lastName"
+              {...register("lastName", { required: true })}
+              placeholder="Last Name"
+              className="w-full border rounded px-3 py-2"
+            />
+          </div>
+          <div className="flex flex-col">
+            <label
+              htmlFor="email"
+              className="mb-1 text-xs font-semibold text-slate-600"
+            >
+              Email
+            </label>
+            <input
+              id="email"
+              {...register("email", { required: true })}
+              placeholder="Email"
+              className="w-full border rounded px-3 py-2"
+            />
+          </div>
+          <div className="flex flex-col">
+            <label
+              htmlFor="password"
+              className="mb-1 text-xs font-semibold text-slate-600"
+            >
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              {...register("password", { required: true })}
+              placeholder="Password"
+              className="w-full border rounded px-3 py-2"
+            />
+          </div>
+          <div className="flex flex-col">
+            <label
+              htmlFor="phoneNumber"
+              className="mb-1 text-xs font-semibold text-slate-600"
+            >
+              Phone Number
+            </label>
+            <input
+              id="phoneNumber"
+              {...register("phoneNumber")}
+              placeholder="Phone Number"
+              className="w-full border rounded px-3 py-2"
+            />
+          </div>
+          <div className="flex flex-col">
+            <label
+              htmlFor="address"
+              className="mb-1 text-xs font-semibold text-slate-600"
+            >
+              Address
+            </label>
+            <input
+              id="address"
+              {...register("address")}
+              placeholder="Address"
+              className="w-full border rounded px-3 py-2"
+            />
+          </div>
+          <div className="flex flex-col col-span-2">
+            <label
+              htmlFor="departmentId"
+              className="mb-1 text-xs font-semibold text-slate-600"
+            >
+              Department
+            </label>
+            <select
+              id="departmentId"
+              {...register("departmentId", {
+                valueAsNumber: true,
+                required: true,
+              })}
+              className="w-full border rounded px-3 py-2"
+              disabled={loadingDepartments}
+              defaultValue=""
+            >
+              <option value="" disabled>
+                Select a department
+              </option>
+              {departments.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button
+            type="submit"
+            className="w-full bg-blue-600 text-white py-2 rounded col-span-2"
+            disabled={isSubmitting}
+          >
+            Add User
+          </button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function UsersPageContent() {
   const { user } = useAuth();
 
@@ -33,6 +220,9 @@ function UsersPageContent() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<User | null>(null);
+  const [page, setPage] = useState(0); // zero-based
+  const [size] = useState(10); // users per page
+  const [showAdd, setShowAdd] = useState(false);
 
   const isAdmin = user?.role?.toLowerCase() === "admin";
 
@@ -58,8 +248,18 @@ function UsersPageContent() {
     return filterUsers(users, query);
   }, [users, query]);
 
+  // Pagination logic
+  const total = visibleUsers.length;
+  const pagedUsers = visibleUsers.slice(page * size, page * size + size);
+  const totalPages = Math.ceil(total / size);
+
+  // Reset to first page on search
+  useEffect(() => {
+    setPage(0);
+  }, [query]);
+
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto max-w-full space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -72,7 +272,7 @@ function UsersPageContent() {
         </div>
 
         {isAdmin && (
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={() => setShowAdd(true)}>
             <Plus className="size-4" />
             Add User
           </Button>
@@ -92,7 +292,11 @@ function UsersPageContent() {
         </div>
 
         {isAdmin && (
-          <Button variant="outline" className="gap-2">
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={() => toast("Filter functionality coming soon!")}
+          >
             <Filter className="size-4" />
             Filter
           </Button>
@@ -150,7 +354,7 @@ function UsersPageContent() {
                   </td>
                 </tr>
               ) : (
-                visibleUsers.map((u) => (
+                pagedUsers.map((u) => (
                   <UserTableRow
                     key={u.id}
                     user={u}
@@ -164,8 +368,78 @@ function UsersPageContent() {
         </div>
       </div>
 
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-end items-center gap-2 pt-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={page === 0}
+          >
+            Previous
+          </Button>
+          {Array.from({ length: totalPages }).map((_, i) => (
+            <Button
+              key={i}
+              variant={i === page ? "default" : "outline"}
+              size="sm"
+              onClick={() => setPage(i)}
+            >
+              {i + 1}
+            </Button>
+          ))}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            disabled={page === totalPages - 1}
+          >
+            Next
+          </Button>
+          <span className="ml-4 text-xs text-muted-foreground">
+            Total: {total}
+          </span>
+        </div>
+      )}
+
+      {/* Add User Modal */}
+      <AddUserModal
+        open={showAdd}
+        onClose={() => setShowAdd(false)}
+        onAdd={async (newUser) => {
+          try {
+            setLoading(true);
+            // @ts-ignore: id will be assigned by backend
+            const created = await usersService.create({
+              first_name: newUser.firstName,
+              last_name: newUser.lastName,
+              email: newUser.email,
+              password: newUser.password,
+              phone_number: newUser.phoneNumber,
+              address: newUser.address,
+              department_id: newUser.departmentId,
+              role: "Employee", // Default role, can be changed as needed
+              status: "Active", // Default status, can be changed as needed
+              sessions: 0, // Default sessions, can be changed as needed
+            });
+            if (created) {
+              setUsers((prev) => [created, ...prev]);
+              setShowAdd(false);
+              toast.success("User added successfully");
+            } else {
+              toast.error("Failed to add user");
+            }
+          } catch {
+            toast.error("Failed to add user");
+          } finally {
+            setLoading(false);
+          }
+        }}
+      />
+
       {/* Modal */}
-      {selected && (
+      {selected !== null && (
         <UserModal
           user={selected}
           isAdmin={isAdmin}

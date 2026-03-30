@@ -6,21 +6,28 @@ import { RoleBadge } from "./RoleBadge";
 import { StatusBadge } from "./StatusBadge";
 import { InfoRow } from "./InfoRow";
 import { Avatar } from "./Avatar";
- 
 
 type Props = {
-  user:      User;
-  isAdmin:   boolean;
-  onClose:   () => void;
+  user: User;
+  isAdmin: boolean;
+  onClose: () => void;
 };
 
 export function UserModal({ user: u, isAdmin, onClose }: Props) {
   const info = [
-    { icon: Mail,     label: "Email",      value: u.email },
-    { icon: Phone,    label: "Phone",      value: u.phone_number },
-    { icon: MapPin,   label: "Address",    value: u.address },
-    { icon: Building, label: "Department", value: `${u.department_name} (ID: ${u.department_id})` },
-    { icon: BookOpen, label: "Sessions",   value: `Involved in ${u.sessions} active sessions` },
+    { icon: Mail, label: "Email", value: u.email },
+    { icon: Phone, label: "Phone", value: u.phone_number },
+    { icon: MapPin, label: "Address", value: u.address },
+    {
+      icon: Building,
+      label: "Department",
+      value: `${u.department_name} (ID: ${u.department_id})`,
+    },
+    {
+      icon: BookOpen,
+      label: "Sessions",
+      value: `Involved in ${u.sessions} active sessions`,
+    },
   ];
 
   return (
@@ -50,7 +57,9 @@ export function UserModal({ user: u, isAdmin, onClose }: Props) {
 
           {/* Name + badges */}
           <div className="mb-5 mt-14">
-            <h2 className="text-2xl font-bold text-slate-900">{getFullName(u)}</h2>
+            <h2 className="text-2xl font-bold text-slate-900">
+              {getFullName(u)}
+            </h2>
             <div className="mt-2 flex items-center gap-2">
               <RoleBadge role={u.role} />
               <StatusBadge status={u.status} />
@@ -60,7 +69,16 @@ export function UserModal({ user: u, isAdmin, onClose }: Props) {
           {/* Info rows */}
           <div className="space-y-3">
             {info.map(({ icon, label, value }) => (
-              <InfoRow key={label} icon={icon} label={label} value={value} />
+              <InfoRow
+                key={label}
+                icon={icon}
+                label={
+                  <span className="font-medium text-slate-700 mr-2">
+                    {label}:
+                  </span>
+                }
+                value={value}
+              />
             ))}
           </div>
 
@@ -68,7 +86,11 @@ export function UserModal({ user: u, isAdmin, onClose }: Props) {
           <div className="mt-6 flex gap-3">
             {isAdmin ? (
               <>
-                <Button variant="outline" className="h-11 flex-1 rounded-xl border-slate-200" onClick={onClose}>
+                <Button
+                  variant="outline"
+                  className="h-11 flex-1 rounded-xl border-slate-200"
+                  onClick={onClose}
+                >
                   Edit Profile
                 </Button>
                 <Button className="h-11 flex-1 rounded-xl bg-[#1f6fff] text-white shadow-sm hover:bg-blue-700">
@@ -76,7 +98,10 @@ export function UserModal({ user: u, isAdmin, onClose }: Props) {
                 </Button>
               </>
             ) : (
-              <Button className="h-11 w-full rounded-xl bg-[#1f6fff] text-white shadow-sm hover:bg-blue-700" onClick={onClose}>
+              <Button
+                className="h-11 w-full rounded-xl bg-[#1f6fff] text-white shadow-sm hover:bg-blue-700"
+                onClick={onClose}
+              >
                 Close
               </Button>
             )}
