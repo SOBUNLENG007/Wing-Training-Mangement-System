@@ -6,10 +6,10 @@ import { SessionsCell } from "./SessionCel";
 import { User } from "@/lib/types/user";
 import { Avatar } from "./Avatar";
 
-type Props = { 
-  user:        User;
-  isAdmin:     boolean;
-  onRowClick:  (u: User) => void;
+type Props = {
+  user: User;
+  isAdmin: boolean;
+  onRowClick: (u: User) => void;
 };
 
 export function UserTableRow({ user: u, isAdmin, onRowClick }: Props) {
@@ -32,26 +32,39 @@ export function UserTableRow({ user: u, isAdmin, onRowClick }: Props) {
       </td>
 
       {/* Role */}
-      <td className="p-4"><RoleBadge role={u.role} /></td>
+      <td className="p-4">
+        <RoleBadge role={u.role} />
+      </td>
 
       {/* Department */}
       <td className="p-4 text-[13px] font-medium text-slate-600">
-        {u.department_name}
-        <span className="ml-1 text-[11px] text-slate-400">#{u.department_id}</span>
+        {u.departmentName}
       </td>
 
       {/* Phone / Address */}
-      <td className="p-4 text-[13px] text-slate-600">{u.phone_number}</td>
+      <td className="p-4 text-[13px] text-slate-600">{u.phoneNumber}</td>
       <td className="p-4 text-[13px] text-slate-600">{u.address}</td>
 
       {/* Sessions */}
-      <td className="p-4"><SessionsCell count={u.sessions} /></td>
+      <td className="p-4">
+        <SessionsCell count={u.sessions} />
+      </td>
 
       {/* Status */}
-      <td className="p-4"><StatusBadge status={u.status} /></td>
+      <td className="p-4">
+        {typeof u.status === "boolean" ? (
+          u.status ? (
+            <StatusBadge status="Active" />
+          ) : (
+            <StatusBadge status="Inactive" />
+          )
+        ) : (
+          <StatusBadge status={u.status} />
+        )}
+      </td>
 
       {/* Actions */}
-      <td className="p-4 px-6 text-right">
+      <td className="p-4 px-6 text-center">
         {isAdmin ? (
           <button
             onClick={(e) => e.stopPropagation()}

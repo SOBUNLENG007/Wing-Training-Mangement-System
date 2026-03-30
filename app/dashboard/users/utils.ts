@@ -1,9 +1,9 @@
 import { User } from "@/lib/types/user";
 
-export const getFullName = (u: User) => `${u.first_name} ${u.last_name}`;
+export const getFullName = (u: User) => `${u.firstName} ${u.lastName}`.trim();
 export const getInitials = (u: User) => {
-  const first = u.first_name && u.first_name.length > 0 ? u.first_name[0] : "";
-  const last = u.last_name && u.last_name.length > 0 ? u.last_name[0] : "";
+  const first = u.firstName && u.firstName.length > 0 ? u.firstName[0] : "";
+  const last = u.lastName && u.lastName.length > 0 ? u.lastName[0] : "";
   const initials = `${first}${last}`.toUpperCase();
   return initials || "?";
 };

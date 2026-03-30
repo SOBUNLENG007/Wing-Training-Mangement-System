@@ -3,15 +3,15 @@ export type UserStatus = "Active" | "Inactive";
 
 export type User = {
   id:              number;
-  first_name:      string;
-  last_name:       string;
+  firstName:      string;
+  lastName:       string;
   email:           string;
-  phone_number:    string;
+  phoneNumber:    string;
   address:         string;
   status:          UserStatus;
   role:            UserRole;
   department_id:   number;
-  department_name: string;
+  departmentName: string;
   sessions:        number;
   avatar_url?:     string;
 };

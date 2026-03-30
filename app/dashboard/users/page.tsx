@@ -60,7 +60,7 @@ function AddUserModal({
     register,
     handleSubmit,
     reset,
-    formState: { isSubmitting },
+    formState: { isSubmitting, errors },
   } = useForm<AddUserForm>();
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loadingDepartments, setLoadingDepartments] = useState(false);
@@ -70,7 +70,12 @@ function AddUserModal({
     setLoadingDepartments(true);
     departmentService
       .getAll()
-      .then((data) => setDepartments(Array.isArray(data) ? data : []))
+      .then((data) => {
+        let arr = [];
+        if (Array.isArray(data)) arr = data;
+        else if (data && Array.isArray(data.payload)) arr = data.payload;
+        setDepartments(arr);
+      })
       .finally(() => setLoadingDepartments(false));
   }, [open]);
 
@@ -140,10 +145,21 @@ function AddUserModal({
             <input
               id="password"
               type="password"
-              {...register("password", { required: true })}
+              {...register("password", {
+                required: true,
+                minLength: 8,
+                pattern:
+                  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+              })}
               placeholder="Password"
               className="w-full border rounded px-3 py-2"
             />
+            {errors.password && (
+              <span className="text-xs text-red-500 mt-1">
+                Password must be at least 8 characters, include uppercase,
+                lowercase, number, and special character.
+              </span>
+            )}
           </div>
           <div className="flex flex-col">
             <label
@@ -187,11 +203,15 @@ function AddUserModal({
                 required: true,
               })}
               className="w-full border rounded px-3 py-2"
-              disabled={loadingDepartments}
+              disabled={loadingDepartments || departments.length === 0}
               defaultValue=""
             >
               <option value="" disabled>
-                Select a department
+                {loadingDepartments
+                  ? "Loading departments..."
+                  : departments.length === 0
+                    ? "No departments found"
+                    : "Select a department"}
               </option>
               {departments.map((d) => (
                 <option key={d.id} value={d.id}>
@@ -199,6 +219,11 @@ function AddUserModal({
                 </option>
               ))}
             </select>
+            {!loadingDepartments && departments.length === 0 && (
+              <span className="text-xs text-red-500 mt-1">
+                No departments available. Please add departments first.
+              </span>
+            )}
           </div>
           <button
             type="submit"
@@ -221,7 +246,7 @@ function UsersPageContent() {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<User | null>(null);
   const [page, setPage] = useState(0); // zero-based
-  const [size] = useState(10); // users per page
+  const [size] = useState(7); // users per page (was 10)
   const [showAdd, setShowAdd] = useState(false);
 
   const isAdmin = user?.role?.toLowerCase() === "admin";
@@ -412,16 +437,13 @@ function UsersPageContent() {
             setLoading(true);
             // @ts-ignore: id will be assigned by backend
             const created = await usersService.create({
-              first_name: newUser.firstName,
-              last_name: newUser.lastName,
+              firstName: newUser.firstName,
+              lastName: newUser.lastName,
               email: newUser.email,
               password: newUser.password,
-              phone_number: newUser.phoneNumber,
+              phoneNumber: newUser.phoneNumber,
               address: newUser.address,
-              department_id: newUser.departmentId,
-              role: "Employee", // Default role, can be changed as needed
-              status: "Active", // Default status, can be changed as needed
-              sessions: 0, // Default sessions, can be changed as needed
+              departmentId: newUser.departmentId,
             });
             if (created) {
               setUsers((prev) => [created, ...prev]);
