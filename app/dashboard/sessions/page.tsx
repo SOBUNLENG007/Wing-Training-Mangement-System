@@ -29,41 +29,36 @@ function SessionsPageContent() {
   const { user } = useAuth();
 
   // Debug: Log user data
-  useEffect(() => {
-  }, [user]);
+  useEffect(() => {}, [user]);
 
-  const [sessions, setSessions] = useState<TrainingSession[]>([]);
+  const [allSessions, setAllSessions] = useState<TrainingSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterOption>("all");
   const [showCreate, setShowCreate] = useState(false);
   const [selectedSession, setSelectedSession] =
     useState<TrainingSession | null>(null);
+  // Frontend pagination
   const [page, setPage] = useState(0); // zero-based
   const [size] = useState(9);
-  const [total, setTotal] = useState(0);
+  // No need for total from backend
 
   const canManage = user?.role === "admin" || user?.role === "trainer";
 
   // Load sessions on mount and when page/filter/search changes
   useEffect(() => {
     loadSessions();
+    // Only reload on filter/search change
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, size, filter, search]);
+  }, [filter, search]);
 
   const loadSessions = async () => {
     try {
       setLoading(true);
-      // Send page and size for backend pagination (page is 1-based)
-      const params = {
-        page: page + 1,
-        size,
-        search,
-        filter: filter !== "all" ? filter : undefined,
-      };
-      const { payload, total } = await sessionsService.getAll(params);
-      setSessions(payload);
-      setTotal(total);
+      // Fetch all sessions at once (no pagination params)
+      const { payload } = await sessionsService.getAll();
+      setAllSessions(payload);
+      setPage(0); // Reset to first page on filter/search change
     } catch (error) {
       toast.error("Failed to load training sessions");
     } finally {
@@ -72,14 +67,24 @@ function SessionsPageContent() {
   };
 
   // ── Derived list ──
-  // Use backend payload directly for visible sessions
-  const visible = sessions;
+  // Filter and search on allSessions
+  let filtered = allSessions;
+  if (filter !== "all") {
+    filtered = filtered.filter((s) => s.status === filter);
+  }
+  if (search) {
+    filtered = filtered.filter((s) =>
+      s.title?.toLowerCase().includes(search.toLowerCase()),
+    );
+  }
+  const total = filtered.length;
+  const visible = filtered.slice(page * size, page * size + size);
 
   // ── Handlers ───────────────────────────────────────────────────────────────
   async function handleCreate(payload: any) {
     try {
       const created = await sessionsService.create(payload);
-      setSessions((prev) => [created, ...prev]);
+      setAllSessions((prev) => [created, ...prev]);
       setShowCreate(false);
       toast.success("Training session created successfully");
     } catch (error: any) {
@@ -96,7 +101,7 @@ function SessionsPageContent() {
   async function handleDelete(id: string) {
     try {
       await sessionsService.delete(parseInt(id));
-      setSessions((prev) => prev.filter((s) => s.id !== id));
+      setAllSessions((prev) => prev.filter((s) => s.id !== id));
       setSelectedSession(null);
       toast.success("Training session deleted successfully");
     } catch (error) {
