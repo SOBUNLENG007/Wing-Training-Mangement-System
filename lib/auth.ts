@@ -48,10 +48,8 @@ export function decodeToken(token: string): JwtPayload | null {
         .join(""),
     );
     const payload = JSON.parse(jsonPayload);
-    console.log("🔍 JWT Payload decoded:", payload);
     return payload as JwtPayload;
   } catch (error) {
-    console.error("❌ Failed to decode token:", error);
     return null;
   }
 }
@@ -60,7 +58,6 @@ export function getPayload(): JwtPayload | null {
   const token = getAccessToken();
   if (!token) return null;
   const payload = decodeToken(token);
-  console.log("📋 getPayload result:", payload);
   return payload;
 }
 

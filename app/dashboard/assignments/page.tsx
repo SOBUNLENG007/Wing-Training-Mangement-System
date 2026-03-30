@@ -84,7 +84,6 @@ function AssignmentsPageContent() {
       const data = await assignmentsService.getAll()
       setAssignments(data)
     } catch (error) {
-      console.error("Failed to load assignments:", error)
       toast.error("Failed to load assignments")
     } finally {
       setLoading(false)

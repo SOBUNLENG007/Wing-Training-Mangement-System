@@ -1,67 +1,16 @@
-// import { api } from "@/lib/api";
-// import type { User } from "@/lib/mock-data";
-
-// export const usersService = {
-//   // Get all users
-//   getAll: async (): Promise<User[]> => {
-//     const res = await api.get("/users");
-//     return res.data;
-//   },
-
-//   // Get user by ID
-//   getById: async (id: string): Promise<User> => {
-//     const res = await api.get(`/users/${id}`);
-//     return res.data;
-//   },
-
-//   // Create new user
-//   create: async (data: Omit<User, "id">): Promise<User> => {
-//     const res = await api.post("/users", data);
-//     return res.data;
-//   },
-
-//   // Update user
-//   update: async (id: string, data: Partial<User>): Promise<User> => {
-//     const res = await api.put(`/users/${id}`, data);
-//     return res.data;
-//   },
-
-//   // Delete user
-//   delete: async (id: string): Promise<void> => {
-//     await api.delete(`/users/${id}`);
-//   },
-
-//   // Get users by role
-//   getByRole: async (role: string): Promise<User[]> => {
-//     const res = await api.get(`/users/role/${role}`);
-//     return res.data;
-//   },
-
-//   // Get users by department
-//   getByDepartment: async (department: string): Promise<User[]> => {
-//     const res = await api.get(`/users/department/${department}`);
-//     return res.data;
-//   },
-
-//   // Get current user profile
-//   getProfile: async (): Promise<User> => {
-//     const res = await api.get("/users/profile");
-//     return res.data;
-//   },
-
-//   // Update current user profile
-//   updateProfile: async (data: Partial<User>): Promise<User> => {
-//     const res = await api.put("/users/profile", data);
-//     return res.data;
-//   },
-// };
-
 import { api } from "@/lib/api";
-import type { User } from "@/lib/types/user"; // ✅ FIXED
+import type { User } from "@/lib/types/user";
+import { getPayload } from "@/lib/auth";
 
 // helper to normalize backend response
-const extract = <T>(res: any): T => {
-  return res.data?.payload ?? res.data ?? null;
+const extract = <T>(res: any): T | null => {
+  // Prefer payload, then data, then null
+  const data = res?.data?.payload ?? res?.data ?? null;
+  // Defensive: if data is empty object, treat as null
+  if (data && typeof data === "object" && Object.keys(data).length === 0) {
+    return null;
+  }
+  return data;
 };
 
 export const usersService = {
@@ -72,25 +21,25 @@ export const usersService = {
   },
 
   // Get current authenticated user
-  getMe: async (): Promise<User> => {
+  getMe: async (): Promise<User | null> => {
     const res = await api.get("/users/me");
     return extract<User>(res);
   },
 
   // Get user by ID
-  getById: async (id: string): Promise<User> => {
+  getById: async (id: string): Promise<User | null> => {
     const res = await api.get(`/users/${id}`);
     return extract<User>(res);
   },
 
   // Create a new user
-  create: async (data: Omit<User, "id">): Promise<User> => {
+  create: async (data: Omit<User, "id">): Promise<User | null> => {
     const res = await api.post("/users", data);
     return extract<User>(res);
   },
 
   // Update a user
-  update: async (id: string, data: Partial<User>): Promise<User> => {
+  update: async (id: string, data: Partial<User>): Promise<User | null> => {
     const res = await api.put(`/users/${id}`, data);
     return extract<User>(res);
   },
@@ -100,22 +49,7 @@ export const usersService = {
     await api.delete(`/users/${id}`);
   },
 
-  // ✅ Create user
-  create: async (data: Omit<User, "id">): Promise<User> => {
-    const res = await api.post("/users", data);
-    return extract<User>(res);
-  },
-
-  // ✅ Update user
-  update: async (id: string, data: Partial<User>): Promise<User> => {
-    const res = await api.put(`/users/${id}`, data);
-    return extract<User>(res);
-  },
-
-  // ✅ Delete user
-  delete: async (id: string): Promise<void> => {
-    await api.delete(`/users/${id}`);
-  },
+  // (Removed duplicate create, update, delete)
 
   // ✅ Get users by role
   getByRole: async (role: string): Promise<User[]> => {
@@ -129,14 +63,24 @@ export const usersService = {
     return extract<User[]>(res) || [];
   },
 
-  // ✅ Current profile
-  getProfile: async (): Promise<User> => {
-    const res = await api.get("/users/profile");
-    return extract<User>(res);
+  // ✅ Current profile (by ID from JWT, supports user_id or id)
+  getProfile: async (): Promise<User | null> => {
+    const payload = getPayload();
+    // @ts-expect-error: user_id may exist on some JWTs
+    const id = payload?.id || payload?.user_id;
+    if (!id) {
+      return null;
+    }
+    const res = await api.get(`/users/${id}`);
+    const user = extract<User>(res);
+    if (!user || !user.id || !user.email) {
+      return null;
+    }
+    return user;
   },
 
   // ✅ Update profile
-  updateProfile: async (data: Partial<User>): Promise<User> => {
+  updateProfile: async (data: Partial<User>): Promise<User | null> => {
     const res = await api.put("/users/profile", data);
     return extract<User>(res);
   },

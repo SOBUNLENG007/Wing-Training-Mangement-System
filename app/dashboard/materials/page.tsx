@@ -157,7 +157,6 @@ function MaterialsPageContent() {
       const data = await materialsService.getAll()
       setMaterials(data as UIMaterial[])
     } catch (error) {
-      console.error("Failed to load materials:", error)
       toast.error("Failed to load materials")
     } finally {
       setLoading(false)

@@ -27,7 +27,6 @@ function ReportsPageContent() {
       const data = await reportsService.getDepartmentStats();
       setDepartmentStats(data);
     } catch (error) {
-      console.error("Failed to load reports data:", error);
       toast.error("Failed to load reports data");
     } finally {
       setLoading(false);

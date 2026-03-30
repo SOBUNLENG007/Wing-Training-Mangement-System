@@ -31,24 +31,8 @@ api.interceptors.response.use(
       const url = config?.url || error.config?.url || "Unknown URL";
       const method = config?.method || error.config?.method || "Unknown method";
       const hasBody = data && Object.keys(data).length > 0;
-      console.error("❌ API Error Response:", {
-        url,
-        method,
-        status: status || "No status",
-        statusText: statusText || "No statusText",
-        message:
-          data?.message ||
-          (!hasBody
-            ? "No error message returned from server"
-            : "Unknown error from server"),
-        error: data?.error,
-        errors: data?.errors,
-        body: hasBody ? data : "Empty response body",
-      });
     } else if (error.request) {
-      console.error("❌ No Response Received:", error.request);
     } else {
-      console.error("❌ Error:", error.message);
     }
 
     if (error.response?.status === 401) {

@@ -48,11 +48,9 @@ export default function SettingsPage() {
   // ── Handlers ─────── 
   function handleSaveProfile() {
     const payload = { ...profile, profileImageName: avatarFile?.name ?? null };
-    console.log("Save profile:", payload);
   }
 
   function handleChangePassword() {
-    console.log("Change password:", password);
   }
 
   // ── Guard ──────── 

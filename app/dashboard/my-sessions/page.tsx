@@ -67,7 +67,6 @@ function MySessionsPageContent() {
       const data = await sessionsService.getMySessions();
       setSessions(data);
     } catch (error) {
-      console.error("Failed to load sessions:", error);
       toast.error("Failed to load sessions");
     } finally {
       setLoading(false);
@@ -94,7 +93,6 @@ function MySessionsPageContent() {
       setSessionAttendance(attendance);
       setSessionProgress(progress);
     } catch (error) {
-      console.error("Failed to load session details:", error);
       toast.error("Failed to load session details");
     }
   };

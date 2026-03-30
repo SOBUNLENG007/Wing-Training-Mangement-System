@@ -16,7 +16,11 @@ type AuthState = {
   user: User | null;
   isAuthenticated: boolean;
 
-  login: (tokens: { accessToken: string; refreshToken?: string , user: User }) => void;
+  login: (tokens: {
+    accessToken: string;
+    refreshToken?: string;
+    user: User;
+  }) => void;
 
   logout: () => void;
 
@@ -31,8 +35,6 @@ export const useAuthStore = create<AuthState>((set) => ({
     setTokens(accessToken, refreshToken);
 
     const payload = getPayload();
-    console.log("🔐 Auth Login - Payload received:", payload);
-
     const normalizedUser = user
       ? {
           id: user.id,
@@ -43,15 +45,17 @@ export const useAuthStore = create<AuthState>((set) => ({
           departmentName: user.departmentName,
         }
       : payload
-      ? {
-          id: payload.id || (payload as any).userId || undefined,
-          email: payload.sub || "",
-          role: (payload.role || "").toLowerCase(),
-          name: payload.name || payload.sub || "",
-          departmentId: payload.departmentId || (payload as any).deptId || undefined,
-          departmentName: payload.departmentName || (payload as any).deptName || undefined,
-        }
-      : null;
+        ? {
+            id: payload.id || (payload as any).userId || undefined,
+            email: payload.sub || "",
+            role: (payload.role || "").toLowerCase(),
+            name: payload.name || payload.sub || "",
+            departmentId:
+              payload.departmentId || (payload as any).deptId || undefined,
+            departmentName:
+              payload.departmentName || (payload as any).deptName || undefined,
+          }
+        : null;
 
     if (normalizedUser) {
       localStorage.setItem("wtmsUser", JSON.stringify(normalizedUser));
@@ -61,8 +65,6 @@ export const useAuthStore = create<AuthState>((set) => ({
       user: normalizedUser,
       isAuthenticated: !!normalizedUser,
     });
-
-    console.log("🔐 Auth Login - User set with ID:", normalizedUser?.id);
   },
 
   logout: () => {
@@ -76,14 +78,13 @@ export const useAuthStore = create<AuthState>((set) => ({
   loadUser: async () => {
     const token = getAccessToken();
 
-    const savedUser = typeof window !== "undefined" ? localStorage.getItem("wtmsUser") : null;
+    const savedUser =
+      typeof window !== "undefined" ? localStorage.getItem("wtmsUser") : null;
     let persistedUser = null;
     if (savedUser) {
       try {
         persistedUser = JSON.parse(savedUser);
-        console.log("🔐 loadUser - persisted user from localStorage:", persistedUser);
       } catch (e) {
-        console.warn("⚠️ loadUser - bad persisted user JSON", e);
         persistedUser = null;
       }
     }
@@ -94,14 +95,20 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
 
     const payload = token ? getPayload() : null;
-    console.log("🔐 loadUser - Payload:", payload);
 
     let profile = null;
+
     try {
       profile = await usersService.getProfile();
-      console.log("🔐 loadUser - Profile from API:", profile);
+      if (!profile) {
+        clearAuth();
+        set({ user: null, isAuthenticated: false });
+        return;
+      }
     } catch (err) {
-      console.warn("⚠️ loadUser - unable to get profile from API:", err);
+      clearAuth();
+      set({ user: null, isAuthenticated: false });
+      return;
     }
 
     const user =
@@ -113,8 +120,10 @@ export const useAuthStore = create<AuthState>((set) => ({
             email: payload.sub || "",
             role: (payload.role || "").toLowerCase(),
             name: payload.name || payload.sub || "",
-            departmentId: payload.departmentId || (payload as any).deptId || undefined,
-            departmentName: payload.departmentName || (payload as any).deptName || undefined,
+            departmentId:
+              payload.departmentId || (payload as any).deptId || undefined,
+            departmentName:
+              payload.departmentName || (payload as any).deptName || undefined,
           }
         : null);
 

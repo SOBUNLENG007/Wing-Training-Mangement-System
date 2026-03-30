@@ -145,18 +145,9 @@ export function CreateSessionModal({ open, onCloseAction, onSubmitAction, traine
       try {
         const profile = await usersService.getProfile();
         finalTrainerId = profile?.id;
-        console.log("✅ Fallback profile-based trainerId:", finalTrainerId);
       } catch (error) {
-        console.warn("⚠️ Unable to fetch profile for fallback trainerId", error);
       }
     }
-
-    // if (!finalTrainerId) {
-    //   console.error("❌ trainerId is not set! User ID:", finalTrainerId);
-    //   toast.error("Unable to create session: trainer is not identified. Please reload and try again.");
-    //   return;
-    // }
-
     const payload = {
       userId: finalTrainerId,
       title,
@@ -167,8 +158,6 @@ export function CreateSessionModal({ open, onCloseAction, onSubmitAction, traine
       departmentId: Number(selectedDeptId),
       maxCapacity,
     };
-
-    console.log("📝 Modal - Submitting payload:", payload);
     onSubmitAction(payload);
     
     // Reset form

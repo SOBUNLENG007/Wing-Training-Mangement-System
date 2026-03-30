@@ -30,7 +30,6 @@ function SessionsPageContent() {
 
   // Debug: Log user data
   useEffect(() => {
-    console.log("🔐 Current authenticated user:", user);
   }, [user]);
 
   const [sessions, setSessions] = useState<TrainingSession[]>([]);
@@ -66,7 +65,6 @@ function SessionsPageContent() {
       setSessions(payload);
       setTotal(total);
     } catch (error) {
-      console.error("Failed to load sessions:", error);
       toast.error("Failed to load training sessions");
     } finally {
       setLoading(false);
@@ -80,24 +78,17 @@ function SessionsPageContent() {
   // ── Handlers ───────────────────────────────────────────────────────────────
   async function handleCreate(payload: any) {
     try {
-      console.log("🔄 Creating session with payload:", payload);
       const created = await sessionsService.create(payload);
       setSessions((prev) => [created, ...prev]);
       setShowCreate(false);
       toast.success("Training session created successfully");
     } catch (error: any) {
-      console.error("❌ Failed to create session:", error);
       const errorMsg =
         error?.response?.data?.message ||
         error?.response?.data?.error ||
         error?.response?.data?.errors?.[0] ||
         error?.message ||
         "Failed to create training session";
-      console.error("📋 Error Details:", {
-        message: errorMsg,
-        status: error?.response?.status,
-        data: error?.response?.data,
-      });
       toast.error(String(errorMsg));
     }
   }
@@ -109,7 +100,6 @@ function SessionsPageContent() {
       setSelectedSession(null);
       toast.success("Training session deleted successfully");
     } catch (error) {
-      console.error("Failed to delete session:", error);
       toast.error("Failed to delete training session");
     }
   }

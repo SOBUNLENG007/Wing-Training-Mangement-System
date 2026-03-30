@@ -62,7 +62,6 @@ function AttendancePageContent() {
       const data = await attendanceService.getAll()
       setRecords(data)
     } catch (error) {
-      console.error("Failed to load attendance:", error)
       toast.error("Failed to load attendance data")
     } finally {
       setLoading(false)

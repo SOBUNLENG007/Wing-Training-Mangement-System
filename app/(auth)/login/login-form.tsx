@@ -36,8 +36,15 @@ export function LoginForm({
       const response = await authService.login({ email, password });
 
       // 2. Save tokens to Zustand + LocalStorage
-      const { accessToken, refreshToken, user } = response.payload;
-      login({ accessToken, refreshToken , user}); // ✅ Zustand store updates and persists to localStorage
+      const { accessToken, refreshToken, user } = response.payload || {};
+      if (!accessToken) {
+        setError(
+          "No access token returned from backend. Check API response format.",
+        );
+        setLoading(false);
+        return;
+      }
+      login({ accessToken, refreshToken, user }); // ✅ Zustand store updates and persists to localStorage
 
       // 3. Redirect
       router.push("/dashboard");
