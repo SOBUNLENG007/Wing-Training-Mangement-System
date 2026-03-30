@@ -123,41 +123,13 @@ export default function AdminDashboard({ userName }: { userName: string }) {
           attendanceService.getAll(),
           usersService.getAll(),
         ]);
-        setSessions(
-          Array.isArray(sessionsRes?.payload)
-            ? sessionsRes.payload
-            : Array.isArray(sessionsRes)
-              ? sessionsRes
-              : [],
-        );
-        setAssignments(
-          Array.isArray(assignmentsRes?.payload)
-            ? assignmentsRes.payload
-            : Array.isArray(assignmentsRes)
-              ? assignmentsRes
-              : [],
-        );
+        setSessions(Array.isArray(sessionsRes) ? sessionsRes : []);
+        setAssignments(Array.isArray(assignmentsRes) ? assignmentsRes : []);
         setNotifications(
-          Array.isArray(notificationsRes?.payload)
-            ? notificationsRes.payload
-            : Array.isArray(notificationsRes)
-              ? notificationsRes
-              : [],
+          Array.isArray(notificationsRes) ? notificationsRes : [],
         );
-        setAttendance(
-          Array.isArray(attendanceRes?.payload)
-            ? attendanceRes.payload
-            : Array.isArray(attendanceRes)
-              ? attendanceRes
-              : [],
-        );
-        setUsers(
-          Array.isArray(usersRes?.payload)
-            ? usersRes.payload
-            : Array.isArray(usersRes)
-              ? usersRes
-              : [],
-        );
+        setAttendance(Array.isArray(attendanceRes) ? attendanceRes : []);
+        setUsers(Array.isArray(usersRes) ? usersRes : []);
       } catch (e) {}
       setLoading(false);
     }

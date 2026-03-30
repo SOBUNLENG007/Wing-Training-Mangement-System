@@ -1,9 +1,14 @@
 import { BookOpen, Calendar, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge }    from "@/components/ui/badge";
+import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { TrainingSession } from "@/lib/types/session";
-import { STATUS_CONFIG, STATUS_ICONS, formatDateRange, enrollmentPercent } from "../utils";
+import {
+  STATUS_CONFIG,
+  STATUS_ICONS,
+  formatDateRange,
+  enrollmentPercent,
+} from "../utils";
 
 type Props = {
   session: TrainingSession;
@@ -11,8 +16,22 @@ type Props = {
 };
 
 export function SessionCard({ session, onClick }: Props) {
-  const cfg        = STATUS_CONFIG[session.status] ?? { label: "Unknown", color: "bg-slate-100 text-slate-500 border-0" };
-  const StatusIcon = STATUS_ICONS[session.status] ?? BookOpen;
+  // Determine statusKey: if startDate is after today, force 'upcoming'
+  let statusKey: keyof typeof STATUS_CONFIG = "upcoming";
+  const today = new Date();
+  const startDate = new Date(session.startDate);
+  if (startDate > today) {
+    statusKey = "upcoming";
+  } else if (session.status === true) {
+    statusKey = "ongoing";
+  } else if (session.status === false) {
+    statusKey = "completed";
+  }
+  const cfg = STATUS_CONFIG[statusKey] ?? {
+    label: "Unknown",
+    color: "bg-slate-100 text-slate-500 border-0",
+  };
+  const StatusIcon = STATUS_ICONS[statusKey] ?? BookOpen;
 
   return (
     <Card
@@ -29,7 +48,9 @@ export function SessionCard({ session, onClick }: Props) {
               <CardTitle className="text-sm font-semibold leading-tight text-foreground">
                 {session.title}
               </CardTitle>
-              <p className="mt-0.5 text-xs text-muted-foreground">{session.department}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {session.departmentName}
+              </p>
             </div>
           </div>
 
@@ -41,7 +62,9 @@ export function SessionCard({ session, onClick }: Props) {
       </CardHeader>
 
       <CardContent className="space-y-3">
-        <p className="line-clamp-2 text-xs text-muted-foreground">{session.description}</p>
+        <p className="line-clamp-2 text-xs text-muted-foreground">
+          {session.description}
+        </p>
 
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
@@ -50,13 +73,18 @@ export function SessionCard({ session, onClick }: Props) {
           </span>
           <span className="flex items-center gap-1">
             <Users className="size-3" />
-            {session.enrolledCount}/{session.maxCapacity}
+            {session.enrolledCount}/{session.numSession}
           </span>
         </div>
 
-        <Progress value={enrollmentPercent(session.enrolledCount, session.maxCapacity)} className="h-1.5" />
+        <Progress
+          value={enrollmentPercent(session.enrolledCount, session.numSession)}
+          className="h-1.5"
+        />
 
-        <p className="text-[10px] text-muted-foreground">Trainer: {session.trainer}</p>
+        <p className="text-[10px] text-muted-foreground">
+          Trainer: {session.instructorName}
+        </p>
       </CardContent>
     </Card>
   );

@@ -5,6 +5,10 @@ import { useAuth } from "@/lib/auth-store";
 import { RoleGuard } from "@/components/auth/role-guard";
 import { materialsService } from "@/service/materials/materials.service";
 import type { Material } from "@/lib/types/material";
+import { sessionsService } from "@/service/sessions/sessions.service";
+import type { TrainingSession } from "@/lib/types/session";
+import { usersService } from "@/service/users/users.service";
+import type { User } from "@/lib/types/user";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -118,6 +122,25 @@ function isValidFileForType(file: File, selectedType: MaterialType) {
 }
 
 function MaterialsPageContent() {
+  // Track which session folders are open
+  const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({});
+
+  // Session meta info state
+  const [sessionsMap, setSessionsMap] = useState<
+    Record<string, TrainingSession>
+  >({});
+  const [trainersMap, setTrainersMap] = useState<Record<string, User>>({});
+
+  // Only allow one session open at a time
+  function toggleFolder(sessionTitle: string) {
+    setOpenFolders((prev) => {
+      const isCurrentlyOpen = !!prev[sessionTitle];
+      // Close all, then open the clicked one if it was closed
+      return isCurrentlyOpen
+        ? {} // close all
+        : { [sessionTitle]: true };
+    });
+  }
   const { user } = useAuth();
   const [materials, setMaterials] = useState<UIMaterial[]>([]);
   const [loading, setLoading] = useState(true);
@@ -136,6 +159,8 @@ function MaterialsPageContent() {
 
   useEffect(() => {
     loadMaterials();
+    loadSessions();
+    loadTrainers();
   }, []);
 
   const loadMaterials = async () => {
@@ -147,6 +172,35 @@ function MaterialsPageContent() {
       toast.error("Failed to load materials");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Fetch all trainers and build a map for lookup
+  const loadTrainers = async () => {
+    try {
+      // Only fetch users with role 'Trainer' (case-insensitive)
+      const trainers = await usersService.getByRole("Trainer");
+      const map: Record<string, User> = {};
+      trainers.forEach((trainer) => {
+        map[String(trainer.id)] = trainer;
+      });
+      setTrainersMap(map);
+    } catch (error) {
+      toast.error("Failed to load trainers");
+    }
+  };
+
+  // Fetch all sessions and build a map for lookup
+  const loadSessions = async () => {
+    try {
+      const { payload } = await sessionsService.getAll();
+      const map: Record<string, TrainingSession> = {};
+      payload.forEach((session) => {
+        map[session.id] = session;
+      });
+      setSessionsMap(map);
+    } catch (error) {
+      toast.error("Failed to load sessions");
     }
   };
 
@@ -375,118 +429,193 @@ function MaterialsPageContent() {
           </p>
         </div>
       ) : (
-        Object.entries(grouped).map(([session, mats]) => (
-          <div key={session} className="space-y-3">
-            <div className="flex items-center gap-2">
-              <FolderOpen className="size-4 text-primary" />
-              <h2 className="text-sm font-semibold text-foreground">
-                {session}
-              </h2>
-              <Badge variant="secondary" className="text-[10px]">
-                {mats.length} files
-              </Badge>
-            </div>
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {mats.map((material) => {
-                const cfg =
-                  typeConfig[material.type as MaterialType] ||
-                  typeConfig["pdf"];
-                const acfg =
-                  accessConfig[material.accessLevel as AccessLevel] ||
-                  accessConfig["all"];
-                const TypeIcon = cfg.icon;
-                const canOpen = !!material.fileUrl;
-                return (
-                  <Card
-                    key={material.id}
-                    className="transition-shadow hover:shadow-md"
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-3">
-                        <div
-                          className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${cfg.color}`}
-                        >
-                          <TypeIcon className="size-5" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium text-foreground">
-                            {material.title}
-                          </p>
-                          <div className="mt-1 flex items-center gap-2">
-                            <Badge
-                              className={`border-0 text-[10px] ${cfg.color}`}
-                            >
-                              {cfg.label}
-                            </Badge>
-                            <span className="text-[10px] text-muted-foreground">
-                              {material.size}
-                            </span>
-                          </div>
-                          {material.originalFileName && (
-                            <p className="mt-1 truncate text-[10px] text-muted-foreground">
-                              {material.originalFileName}
-                            </p>
-                          )}
-                          <div className="mt-3 flex items-center justify-between">
-                            <div className="flex items-center gap-1">
-                              <Lock className="size-3 text-muted-foreground" />
-                              <Badge className={`text-[10px] ${acfg.color}`}>
-                                {acfg.label}
-                              </Badge>
-                            </div>
-                            <div className="flex gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="size-7"
-                                onClick={() => handleView(material)}
-                                disabled={!canOpen}
-                              >
-                                <Eye className="size-3.5" />
-                                <span className="sr-only">View</span>
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="size-7"
-                                onClick={() => handleDownload(material)}
-                                disabled={!canOpen}
-                              >
-                                <Download className="size-3.5" />
-                                <span className="sr-only">Download</span>
-                              </Button>
-                              {canManageMaterials && (
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="size-7 text-destructive hover:text-destructive"
-                                  onClick={() => handleDelete(material)}
-                                >
-                                  <XCircle className="size-3.5" />
-                                  <span className="sr-only">Delete</span>
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                          <p className="mt-2 text-[10px] text-muted-foreground">
-                            By {material.uploadedBy} &middot;{" "}
-                            {new Date(material.uploadedAt).toLocaleDateString(
+        Object.entries(grouped).map(([session, mats]) => {
+          const isOpen = openFolders[session] || false;
+          // Find the first material in the group to get sessionId
+          const firstMaterial = mats[0];
+          const sessionId = firstMaterial?.sessionId;
+          const sessionInfo = sessionId ? sessionsMap[sessionId] : undefined;
+          const trainerId = sessionInfo?.trainer;
+          const trainer = trainerId
+            ? trainersMap[String(trainerId)]
+            : undefined;
+          return (
+            <div key={session} className="space-y-2">
+              <div
+                className="flex items-center gap-2 cursor-pointer select-none hover:bg-muted rounded px-2 py-2"
+                onClick={() => toggleFolder(session)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") toggleFolder(session);
+                }}
+                aria-expanded={isOpen}
+              >
+                <FolderOpen
+                  className={`size-4 ${isOpen ? "text-primary" : "text-muted-foreground"}`}
+                />
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-sm font-semibold text-foreground truncate">
+                    {session}
+                  </h2>
+                  {sessionInfo && (
+                    <div className="flex flex-wrap gap-2 mt-1 text-xs text-muted-foreground">
+                      <span>
+                        Trainer:{" "}
+                        {trainer
+                          ? `${trainer.first_name} ${trainer.last_name}`
+                          : "-"}
+                      </span>
+                      <span>
+                        Start:{" "}
+                        {sessionInfo.startDate
+                          ? new Date(sessionInfo.startDate).toLocaleDateString(
                               "en-US",
                               {
                                 month: "short",
                                 day: "numeric",
+                                year: "numeric",
                               },
-                            )}
-                          </p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+                            )
+                          : "-"}
+                      </span>
+                      <span>
+                        End:{" "}
+                        {sessionInfo.endDate
+                          ? new Date(sessionInfo.endDate).toLocaleDateString(
+                              "en-US",
+                              {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              },
+                            )
+                          : "-"}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <Badge variant="secondary" className="text-[10px]">
+                  {mats.length} files
+                </Badge>
+                <span className="ml-2 text-xs text-muted-foreground">
+                  {isOpen ? "▼" : "▶"}
+                </span>
+              </div>
+              {isOpen && (
+                <div
+                  className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3 pl-6 hide-scrollbar"
+                  style={{
+                    overflowY: "auto",
+                    maxHeight: "60vh",
+                    scrollbarWidth: "none",
+                    msOverflowStyle: "none",
+                    backgroundClip: "padding-box",
+                  }}
+                >
+                  {mats.map((material) => {
+                    const cfg =
+                      typeConfig[material.type as MaterialType] ||
+                      typeConfig["pdf"];
+                    const acfg =
+                      accessConfig[material.accessLevel as AccessLevel] ||
+                      accessConfig["all"];
+                    const TypeIcon = cfg.icon;
+                    const canOpen = !!material.fileUrl;
+                    return (
+                      <Card
+                        key={material.id}
+                        className="transition-shadow hover:shadow-md"
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex items-start gap-3">
+                            <div
+                              className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${cfg.color}`}
+                            >
+                              <TypeIcon className="size-5" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-medium text-foreground">
+                                {material.title}
+                              </p>
+                              <div className="mt-1 flex items-center gap-2">
+                                <Badge
+                                  className={`border-0 text-[10px] ${cfg.color}`}
+                                >
+                                  {cfg.label}
+                                </Badge>
+                                <span className="text-[10px] text-muted-foreground">
+                                  {material.size}
+                                </span>
+                              </div>
+                              {material.originalFileName && (
+                                <p className="mt-1 truncate text-[10px] text-muted-foreground">
+                                  {material.originalFileName}
+                                </p>
+                              )}
+                              <div className="mt-3 flex items-center justify-between">
+                                <div className="flex items-center gap-1">
+                                  <Lock className="size-3 text-muted-foreground" />
+                                  <Badge
+                                    className={`text-[10px] ${acfg.color}`}
+                                  >
+                                    {acfg.label}
+                                  </Badge>
+                                </div>
+                                <div className="flex gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="size-7"
+                                    onClick={() => handleView(material)}
+                                    disabled={!canOpen}
+                                  >
+                                    <Eye className="size-3.5" />
+                                    <span className="sr-only">View</span>
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="size-7"
+                                    onClick={() => handleDownload(material)}
+                                    disabled={!canOpen}
+                                  >
+                                    <Download className="size-3.5" />
+                                    <span className="sr-only">Download</span>
+                                  </Button>
+                                  {canManageMaterials && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="size-7 text-destructive hover:text-destructive"
+                                      onClick={() => handleDelete(material)}
+                                    >
+                                      <XCircle className="size-3.5" />
+                                      <span className="sr-only">Delete</span>
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
+                              <p className="mt-2 text-[10px] text-muted-foreground">
+                                By {material.uploadedBy} &middot;{" "}
+                                {new Date(
+                                  material.uploadedAt,
+                                ).toLocaleDateString("en-US", {
+                                  month: "short",
+                                  day: "numeric",
+                                })}
+                              </p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          </div>
-        ))
+          );
+        })
       )}
       {canManageMaterials && (
         <Dialog open={showUpload} onOpenChange={handleOpenChange}>

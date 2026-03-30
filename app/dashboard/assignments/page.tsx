@@ -1,25 +1,24 @@
- 
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useAuth } from "@/lib/auth-store"
-import { RoleGuard } from "@/components/auth/role-guard"
-import { assignmentsService } from "@/service/assignments/assignments.service"
-import type { Assignment } from "@/lib/types/assignment"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { useState, useEffect } from "react";
+import { useAuth } from "@/lib/auth-store";
+import { RoleGuard } from "@/components/auth/role-guard";
+import { assignmentsService } from "@/service/assignments/assignments.service";
+import type { Assignment } from "@/lib/types/assignment";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ClipboardCheck,
   Plus,
@@ -32,9 +31,9 @@ import {
   Send,
   Star,
   MessageSquare,
-} from "lucide-react"
-import { Skeleton } from "@/components/ui/skeleton"
-import { toast } from "sonner"
+} from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 
 const statusConfig = {
   pending: {
@@ -57,85 +56,92 @@ const statusConfig = {
     icon: AlertTriangle,
     color: "bg-destructive/10 text-destructive border-0",
   },
-}
+};
 
 function AssignmentsPageContent() {
-  const { user } = useAuth()
-  const [assignments, setAssignments] = useState<Assignment[]>([])
-  const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState("")
-  const [showCreate, setShowCreate] = useState(false)
-  const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null)
-  const [showSubmit, setShowSubmit] = useState(false)
+  const { user } = useAuth();
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [showCreate, setShowCreate] = useState(false);
+  const [selectedAssignment, setSelectedAssignment] =
+    useState<Assignment | null>(null);
+  const [showSubmit, setShowSubmit] = useState(false);
 
-  const isAdmin = user?.role === "admin"
-  const isTrainer = user?.role === "trainer"
-  const isEmployee = user?.role === "employee"
-  const canManageAssignments = isAdmin || isTrainer
+  const isAdmin = user?.role === "admin";
+  const isTrainer = user?.role === "trainer";
+  const isEmployee = user?.role === "employee";
+  const canManageAssignments = isAdmin || isTrainer;
 
   // Load assignments on mount
   useEffect(() => {
-    loadAssignments()
-  }, [])
+    loadAssignments();
+  }, []);
 
   const loadAssignments = async () => {
     try {
-      setLoading(true)
-      const data = await assignmentsService.getAll()
-      setAssignments(data)
+      setLoading(true);
+      const data = await assignmentsService.getAll();
+      // Defensive: ensure data is always an array
+      setAssignments(Array.isArray(data) ? data : []);
     } catch (error) {
-      toast.error("Failed to load assignments")
+      toast.error("Failed to load assignments");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const filtered = assignments.filter(
     (a) =>
       a.title.toLowerCase().includes(search.toLowerCase()) ||
-      a.sessionTitle.toLowerCase().includes(search.toLowerCase())
-  )
+      a.sessionTitle.toLowerCase().includes(search.toLowerCase()),
+  );
 
-  const pending = filtered.filter((a) => a.status === "pending")
-  const submitted = filtered.filter((a) => a.status === "submitted")
-  const graded = filtered.filter((a) => a.status === "graded")
+  const pending = filtered.filter((a) => a.status === "pending");
+  const submitted = filtered.filter((a) => a.status === "submitted");
+  const graded = filtered.filter((a) => a.status === "graded");
 
   function handleCreate(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    if (!canManageAssignments) return
+    e.preventDefault();
+    if (!canManageAssignments) return;
 
-    const fd = new FormData(e.currentTarget)
+    const fd = new FormData(e.currentTarget);
 
     const newAssignment: Assignment = {
       id: `a${Date.now()}`,
       title: fd.get("title") as string,
-      type: ((fd.get("type") as string) || "assignment") as "assignment" | "quiz",
+      type: ((fd.get("type") as string) || "assignment") as
+        | "assignment"
+        | "quiz",
       sessionId: "s1",
-      sessionTitle: (fd.get("session") as string) || "Cybersecurity Fundamentals",
+      sessionTitle:
+        (fd.get("session") as string) || "Cybersecurity Fundamentals",
       deadline: fd.get("deadline") as string,
       status: "pending",
       maxScore: Number(fd.get("maxScore")) || 100,
       allowLate: fd.get("allowLate") === "yes",
-    }
+    };
 
-    setAssignments([newAssignment, ...assignments])
-    setShowCreate(false)
+    setAssignments([newAssignment, ...assignments]);
+    setShowCreate(false);
   }
 
   function handleSubmitWork() {
-    if (!isEmployee || !selectedAssignment) return
+    if (!isEmployee || !selectedAssignment) return;
 
     setAssignments(
       assignments.map((a) =>
-        a.id === selectedAssignment.id ? { ...a, status: "submitted" as const } : a
-      )
-    )
-    setShowSubmit(false)
-    setSelectedAssignment(null)
+        a.id === selectedAssignment.id
+          ? { ...a, status: "submitted" as const }
+          : a,
+      ),
+    );
+    setShowSubmit(false);
+    setSelectedAssignment(null);
   }
 
   function handleGradeSelected() {
-    if (!canManageAssignments || !selectedAssignment) return
+    if (!canManageAssignments || !selectedAssignment) return;
 
     setAssignments(
       assignments.map((a) =>
@@ -145,15 +151,15 @@ function AssignmentsPageContent() {
               status: "graded" as const,
               score: Math.round(a.maxScore * 0.85),
             }
-          : a
-      )
-    )
-    setSelectedAssignment(null)
+          : a,
+      ),
+    );
+    setSelectedAssignment(null);
   }
 
   function AssignmentCard({ assignment }: { assignment: Assignment }) {
-    const cfg = statusConfig[assignment.status]
-    const StatusIcon = cfg.icon
+    const cfg = statusConfig[assignment.status];
+    const StatusIcon = cfg.icon;
 
     return (
       <Card
@@ -164,7 +170,9 @@ function AssignmentsPageContent() {
           <div className="flex items-start gap-3">
             <div
               className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${
-                assignment.type === "quiz" ? "bg-wtms-orange/10" : "bg-primary/10"
+                assignment.type === "quiz"
+                  ? "bg-wtms-orange/10"
+                  : "bg-primary/10"
               }`}
             >
               {assignment.type === "quiz" ? (
@@ -222,7 +230,7 @@ function AssignmentsPageContent() {
           </div>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   return (
@@ -230,7 +238,9 @@ function AssignmentsPageContent() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">
-            {canManageAssignments ? "Assignment & Assessment Management" : "My Assignments"}
+            {canManageAssignments
+              ? "Assignment & Assessment Management"
+              : "My Assignments"}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {canManageAssignments
@@ -363,7 +373,9 @@ function AssignmentsPageContent() {
                       Deadline
                     </p>
                     <p className="mt-0.5 text-sm font-medium text-foreground">
-                      {new Date(selectedAssignment.deadline).toLocaleDateString()}
+                      {new Date(
+                        selectedAssignment.deadline,
+                      ).toLocaleDateString()}
                     </p>
                   </div>
 
@@ -402,49 +414,60 @@ function AssignmentsPageContent() {
 
                 <div className="flex gap-2">
                   {isEmployee && selectedAssignment.status === "pending" && (
-                    <Button className="flex-1 gap-2" onClick={() => setShowSubmit(true)}>
+                    <Button
+                      className="flex-1 gap-2"
+                      onClick={() => setShowSubmit(true)}
+                    >
                       <Send className="size-4" />
                       Submit Work
                     </Button>
                   )}
 
-                  {canManageAssignments && selectedAssignment.status === "submitted" && (
-                    <div className="space-y-2">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-foreground">
-                        Grade Submission
-                      </p>
-                      <div className="flex gap-2">
-                        <Button className="flex-1 gap-2" onClick={handleGradeSelected}>
-                          <Star className="size-4" />
-                          Grade
-                        </Button>
-                        <Button className="flex-1 gap-2" variant="outline">
-                          <MessageSquare className="size-4" />
-                          Comment
-                        </Button>
-                        <Button className="flex-1 gap-2" variant="secondary">
-                          <Send className="size-4" />
-                          Return
-                        </Button>
+                  {canManageAssignments &&
+                    selectedAssignment.status === "submitted" && (
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-foreground">
+                          Grade Submission
+                        </p>
+                        <div className="flex gap-2">
+                          <Button
+                            className="flex-1 gap-2"
+                            onClick={handleGradeSelected}
+                          >
+                            <Star className="size-4" />
+                            Grade
+                          </Button>
+                          <Button className="flex-1 gap-2" variant="outline">
+                            <MessageSquare className="size-4" />
+                            Comment
+                          </Button>
+                          <Button className="flex-1 gap-2" variant="secondary">
+                            <Send className="size-4" />
+                            Return
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {canManageAssignments && selectedAssignment.status === "pending" && (
-                    <div className="rounded-lg bg-muted/50 p-3">
-                      <p className="text-xs text-muted-foreground">
-                        Waiting for employee submissions. Deadline:{" "}
-                        {new Date(selectedAssignment.deadline).toLocaleDateString()}
-                      </p>
-                    </div>
-                  )}
+                  {canManageAssignments &&
+                    selectedAssignment.status === "pending" && (
+                      <div className="rounded-lg bg-muted/50 p-3">
+                        <p className="text-xs text-muted-foreground">
+                          Waiting for employee submissions. Deadline:{" "}
+                          {new Date(
+                            selectedAssignment.deadline,
+                          ).toLocaleDateString()}
+                        </p>
+                      </div>
+                    )}
 
                   {canManageAssignments &&
                     selectedAssignment.status === "graded" &&
                     selectedAssignment.score !== undefined && (
                       <div className="rounded-lg border border-wtms-green/20 bg-wtms-green/5 p-3">
                         <p className="text-xs font-medium text-foreground">
-                          Graded: {selectedAssignment.score}/{selectedAssignment.maxScore} points
+                          Graded: {selectedAssignment.score}/
+                          {selectedAssignment.maxScore} points
                         </p>
                       </div>
                     )}
@@ -470,7 +493,9 @@ function AssignmentsPageContent() {
             />
             <div className="rounded-lg border-2 border-dashed border-border p-6 text-center">
               <Send className="mx-auto size-8 text-muted-foreground/40" />
-              <p className="mt-2 text-sm text-muted-foreground">Attach your work files</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Attach your work files
+              </p>
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setShowSubmit(false)}>
@@ -490,7 +515,9 @@ function AssignmentsPageContent() {
         <Dialog open={showCreate} onOpenChange={setShowCreate}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle className="text-foreground">Create Assignment</DialogTitle>
+              <DialogTitle className="text-foreground">
+                Create Assignment
+              </DialogTitle>
               <DialogDescription>
                 Create a new quiz or assignment for a training session.
               </DialogDescription>
@@ -517,7 +544,12 @@ function AssignmentsPageContent() {
 
                 <div className="space-y-2">
                   <Label className="text-foreground">Max Score</Label>
-                  <Input name="maxScore" type="number" required defaultValue={100} />
+                  <Input
+                    name="maxScore"
+                    type="number"
+                    required
+                    defaultValue={100}
+                  />
                 </div>
               </div>
 
@@ -550,7 +582,11 @@ function AssignmentsPageContent() {
               </div>
 
               <div className="flex justify-end gap-2 pt-2">
-                <Button type="button" variant="outline" onClick={() => setShowCreate(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowCreate(false)}
+                >
                   Cancel
                 </Button>
                 <Button type="submit">Create</Button>
@@ -560,7 +596,7 @@ function AssignmentsPageContent() {
         </Dialog>
       )}
     </div>
-  )
+  );
 }
 
 export default function AssignmentsPage() {
@@ -568,5 +604,5 @@ export default function AssignmentsPage() {
     <RoleGuard allowed={["admin", "trainer", "employee"]}>
       <AssignmentsPageContent />
     </RoleGuard>
-  )
+  );
 }
