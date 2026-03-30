@@ -43,7 +43,8 @@ function SessionsPageContent() {
   const [size] = useState(9);
   // No need for total from backend
 
-  const canManage = user?.role === "admin" || user?.role === "trainer";
+  // Show create button for all users
+  const canManage = true;
 
   // Load sessions on mount and when page/filter/search changes
   useEffect(() => {
@@ -110,7 +111,7 @@ function SessionsPageContent() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -138,7 +139,7 @@ function SessionsPageContent() {
 
       {/* Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: 9 }).map((_, i) => (
             <div key={i} className="space-y-3 rounded-lg border p-4">
               <Skeleton className="h-4 w-3/4" />
@@ -155,7 +156,7 @@ function SessionsPageContent() {
         <EmptyState />
       ) : (
         <div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
             {visible.map((s) => (
               <SessionCard
                 key={s.id}
@@ -165,7 +166,7 @@ function SessionsPageContent() {
             ))}
           </div>
           {/* Pagination UI */}
-          <Pagination className="mt-6">
+          <Pagination className="mt-4 justify-end">
             <PaginationContent>
               <PaginationItem>
                 <PaginationPrevious

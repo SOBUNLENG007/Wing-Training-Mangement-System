@@ -20,6 +20,14 @@ export const departmentService = {
     return res.data;
   },
 
+  // Get department by user ID
+  getByUserId: async (userId: number | string): Promise<Department | null> => {
+    const res = await api.get(`/departments/by-user-id/${userId}`);
+    if (res.data?.payload) return res.data.payload as Department;
+    if (res.data && res.data.id) return res.data as Department;
+    return null;
+  },
+
   // Create a new department
   create: async (data: Omit<Department, "id">): Promise<Department> => {
     const res = await api.post("/departments", data);

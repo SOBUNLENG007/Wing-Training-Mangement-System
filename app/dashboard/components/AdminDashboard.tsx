@@ -123,25 +123,41 @@ export default function AdminDashboard({ userName }: { userName: string }) {
           attendanceService.getAll(),
           usersService.getAll(),
         ]);
-        setSessions(sessionsRes.payload || sessionsRes);
+        setSessions(
+          Array.isArray(sessionsRes?.payload)
+            ? sessionsRes.payload
+            : Array.isArray(sessionsRes)
+              ? sessionsRes
+              : [],
+        );
         setAssignments(
-          Array.isArray(assignmentsRes)
-            ? assignmentsRes
-            : assignmentsRes?.content || assignmentsRes?.assignments || [],
+          Array.isArray(assignmentsRes?.payload)
+            ? assignmentsRes.payload
+            : Array.isArray(assignmentsRes)
+              ? assignmentsRes
+              : [],
         );
         setNotifications(
-          Array.isArray(notificationsRes)
-            ? notificationsRes
-            : notificationsRes?.content ||
-                notificationsRes?.notifications ||
-                [],
+          Array.isArray(notificationsRes?.payload)
+            ? notificationsRes.payload
+            : Array.isArray(notificationsRes)
+              ? notificationsRes
+              : [],
         );
         setAttendance(
-          Array.isArray(attendanceRes)
-            ? attendanceRes
-            : attendanceRes?.content || attendanceRes?.attendance || [],
+          Array.isArray(attendanceRes?.payload)
+            ? attendanceRes.payload
+            : Array.isArray(attendanceRes)
+              ? attendanceRes
+              : [],
         );
-        setUsers(usersRes);
+        setUsers(
+          Array.isArray(usersRes?.payload)
+            ? usersRes.payload
+            : Array.isArray(usersRes)
+              ? usersRes
+              : [],
+        );
       } catch (e) {}
       setLoading(false);
     }

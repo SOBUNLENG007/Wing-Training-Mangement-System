@@ -1,91 +1,3 @@
-// import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-// import { Button }   from "@/components/ui/button";
-// import { Input }    from "@/components/ui/input";
-// import { Label }    from "@/components/ui/label";
-// import { Textarea } from "@/components/ui/textarea";
-// import { TrainingSession } from "@/lib/types/session";
-
-// type Props = {
-//   open:      boolean;
-//   onClose:   () => void;
-//   onSubmit:  (s: TrainingSession) => void;
-//   trainerName: string;
-// };
-
-// export function CreateSessionModal({ open, onClose, onSubmit, trainerName }: Props) {
-//   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-//     e.preventDefault();
-//     const fd = new FormData(e.currentTarget);
-
-//     const newSession: TrainingSession = {
-//       id:            `s${Date.now()}`,
-//       title:         fd.get("title")       as string,
-//       description:   fd.get("description") as string,
-//       department:    fd.get("department")  as string,
-//       startDate:     fd.get("startDate")   as string,
-//       endDate:       fd.get("endDate")     as string,
-//       trainer:       trainerName,
-//       status:        "upcoming",
-//       enrolledCount: 0,
-//       maxCapacity:   Number(fd.get("capacity")) || 30,
-//     };
-
-//     onSubmit(newSession);
-//   }
-
-//   return (
-//     <Dialog open={open} onOpenChange={onClose}>
-//       <DialogContent className="sm:max-w-md">
-//         <DialogHeader>
-//           <DialogTitle className="text-foreground">Create Training Session</DialogTitle>
-//           <DialogDescription>Set up a new training program for your team.</DialogDescription>
-//         </DialogHeader>
-
-//         <form onSubmit={handleSubmit} className="mt-2 space-y-4">
-//           <div className="space-y-2">
-//             <Label className="text-foreground">Title</Label>
-//             <Input name="title" required placeholder="e.g. Cybersecurity Fundamentals" />
-//           </div>
-
-//           <div className="space-y-2">
-//             <Label className="text-foreground">Description</Label>
-//             <Textarea name="description" required placeholder="Brief description of the training..." rows={3} />
-//           </div>
-
-//           <div className="grid grid-cols-2 gap-3">
-//             <div className="space-y-2">
-//               <Label className="text-foreground">Department</Label>
-//               <Input name="department" required placeholder="e.g. IT" />
-//             </div>
-//             <div className="space-y-2">
-//               <Label className="text-foreground">Max Capacity</Label>
-//               <Input name="capacity" type="number" required defaultValue={30} />
-//             </div>
-//           </div>
-
-//           <div className="grid grid-cols-2 gap-3">
-//             <div className="space-y-2">
-//               <Label className="text-foreground">Start Date</Label>
-//               <Input name="startDate" type="date" required />
-//             </div>
-//             <div className="space-y-2">
-//               <Label className="text-foreground">End Date</Label>
-//               <Input name="endDate" type="date" required />
-//             </div>
-//           </div>
-
-//           <div className="flex justify-end gap-2 pt-2">
-//             <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-//             <Button type="submit">Create Session</Button>
-//           </div>
-//         </form>
-//       </DialogContent>
-//     </Dialog>
-//   );
-// }
-
-
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -110,6 +22,8 @@ import {
 } from "@/components/ui/select";
 import { useAuth } from "@/lib/auth-store";
 import { usersService } from "@/service/users/users.service";
+import { departmentService } from "@/service/departments/department.service";
+import type { Department } from "@/service/departments/department.service";
 
 type Props = {
   open: boolean;
@@ -121,51 +35,95 @@ type Props = {
   departmentName?: string;
 };
 
-export function CreateSessionModal({ open, onCloseAction, onSubmitAction, trainerName, trainerId, departmentId, departmentName }: Props) {
+export function CreateSessionModal({
+  open,
+  onCloseAction,
+  onSubmitAction,
+  trainerName,
+  trainerId,
+  departmentId,
+  departmentName,
+}: Props) {
   const { user } = useAuth();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [maxCapacity, setMaxCapacity] = useState(20);
-  const [selectedDeptId, setSelectedDeptId] = useState(String(departmentId || "2"));
+  // Remove maxCapacity, add numSession
+  const [numSession, setNumSession] = useState(1);
+  const [selectedDeptId, setSelectedDeptId] = useState(
+    String(departmentId || "2"),
+  );
+
+  // Trainer dropdown state
+  const [trainers, setTrainers] = useState<any[]>([]);
+  const [selectedTrainerId, setSelectedTrainerId] = useState<string>("");
+
+  // Department state
+  const [department, setDepartment] = useState<Department | null>(null);
 
   useEffect(() => {
     setSelectedDeptId(String(departmentId || user?.departmentId || "2"));
+    // Fetch all trainers (not just user's department)
+    async function fetchTrainers() {
+      const allTrainers = await usersService.getByRole("TRAINER");
+      setTrainers(allTrainers);
+      if (allTrainers.length > 0)
+        setSelectedTrainerId(String(allTrainers[0].id));
+    }
+    fetchTrainers();
   }, [departmentId, user?.departmentId]);
 
-  const resolvedTrainerId = trainerId ?? user?.id;
+  // Fetch department when trainer changes
+  useEffect(() => {
+    async function fetchDepartment() {
+      if (!selectedTrainerId) return;
+      try {
+        const dept = await departmentService.getByUserId(selectedTrainerId);
+        setDepartment(dept);
+        setSelectedDeptId(String(dept.id));
+      } catch (err) {
+        setDepartment(null);
+      }
+    }
+    fetchDepartment();
+  }, [selectedTrainerId]);
+
+  const resolvedTrainerId = selectedTrainerId || trainerId || user?.id;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     let finalTrainerId = resolvedTrainerId;
-
-    if (!finalTrainerId) {
-      try {
-        const profile = await usersService.getProfile();
-        finalTrainerId = profile?.id;
-      } catch (error) {
-      }
-    }
+    // Ensure startDate and endDate are full ISO datetime strings with milliseconds and Z
+    const toIsoDateTime = (d: string) => {
+      if (!d) return d;
+      // If already has T and Z, return as is
+      if (d.includes("T") && d.endsWith("Z")) return d;
+      // If only date, add T00:00:00.000Z
+      if (d.length === 10) return `${d}T00:00:00.000Z`;
+      // If date with time but no Z, add Z
+      if (d.includes("T") && !d.endsWith("Z")) return `${d}.000Z`;
+      return d;
+    };
     const payload = {
-      userId: finalTrainerId,
       title,
       description,
-      startDate,
-      endDate,
-      instructorId: Number(finalTrainerId),
+      numSession: Number(numSession),
+      startDate: toIsoDateTime(startDate),
+      endDate: toIsoDateTime(endDate),
       departmentId: Number(selectedDeptId),
-      maxCapacity,
+      instructorId: Number(finalTrainerId),
     };
+    console.log("[CreateSessionModal] Submitting payload:", payload);
     onSubmitAction(payload);
-    
+
     // Reset form
     setTitle("");
     setDescription("");
     setStartDate("");
     setEndDate("");
-    setMaxCapacity(20);
+    setNumSession(1);
     setSelectedDeptId(String(departmentId || "2"));
   };
 
@@ -180,85 +138,105 @@ export function CreateSessionModal({ open, onCloseAction, onSubmitAction, traine
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-2">
-
           {/* Title */}
           <div className="space-y-2">
             <Label>Title</Label>
-            <Input 
+            <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              required 
-              placeholder="e.g. Backend Development" 
+              required
+              placeholder="e.g. Backend Development"
             />
           </div>
 
           {/* Description */}
           <div className="space-y-2">
             <Label>Description</Label>
-            <Textarea 
+            <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              required 
-              placeholder="Brief description..." 
-              rows={3} 
+              required
+              placeholder="Brief description..."
+              rows={3}
             />
           </div>
 
-          {/* Max Capacity */}
-          <div className="space-y-2">
-            <Label>Max Capacity</Label>
-            <Input 
-              type="number" 
-              value={maxCapacity}
-              onChange={(e) => setMaxCapacity(Number(e.target.value))}
-              required 
-              min="1"
-              placeholder="e.g. 20" 
-            />
-          </div>
-
-          {/* Trainer (Read-only) */}
+          {/* Trainer Dropdown */}
           <div className="space-y-2">
             <Label>Trainer</Label>
-            <Input type="text" value={trainerName} disabled className="bg-muted" />
+            <Select
+              value={selectedTrainerId}
+              onValueChange={setSelectedTrainerId}
+              required
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select trainer" />
+              </SelectTrigger>
+              <SelectContent>
+                {trainers.length === 0 && (
+                  <SelectItem value="no-trainers" disabled>
+                    No trainers found
+                  </SelectItem>
+                )}
+                {trainers.map((t) => (
+                  <SelectItem key={t.id} value={String(t.id)}>
+                    {t.first_name || t.firstName} {t.last_name || t.lastName} (
+                    {t.email})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
-          {/* Department Selection */}
+          {/* Department Selection (disabled, follows trainer) */}
           <div className="space-y-2">
             <Label>Department</Label>
-            <Select value={selectedDeptId} onValueChange={setSelectedDeptId}>
+            <Select value={selectedDeptId} disabled>
               <SelectTrigger>
                 <SelectValue placeholder="Select department" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="1">IT</SelectItem>
-                <SelectItem value="2">Information Technology</SelectItem>
-                <SelectItem value="3">HR</SelectItem>
-                <SelectItem value="4">Finance</SelectItem>
-                <SelectItem value="5">Operations</SelectItem>
+                {department ? (
+                  <SelectItem value={String(department.id)}>{department.name}</SelectItem>
+                ) : (
+                  <SelectItem value="none" disabled>No department found</SelectItem>
+                )}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Number of Sessions */}
+          <div className="space-y-2">
+            <Label>Number of Sessions</Label>
+            <Input
+              type="number"
+              value={numSession}
+              onChange={(e) => setNumSession(Number(e.target.value))}
+              required
+              min="1"
+              placeholder="e.g. 10"
+            />
           </div>
 
           {/* Dates */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Start Date</Label>
-              <Input 
-                type="date" 
+              <Input
+                type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                required 
+                required
               />
             </div>
 
             <div className="space-y-2">
               <Label>End Date</Label>
-              <Input 
-                type="date" 
+              <Input
+                type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                required 
+                required
               />
             </div>
           </div>
