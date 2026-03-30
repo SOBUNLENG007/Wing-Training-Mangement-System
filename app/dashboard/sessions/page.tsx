@@ -70,8 +70,16 @@ function SessionsPageContent() {
   // ── Derived list ──
   // Filter and search on allSessions
   let filtered = allSessions;
-  if (filter !== "all") {
-    filtered = filtered.filter((s) => s.status === filter);
+  const today = new Date();
+  if (filter === "completed") {
+    filtered = filtered.filter((s) => s.status === false);
+  } else if (filter === "ongoing") {
+    filtered = filtered.filter((s) => s.status === true);
+  } else if (filter === "upcoming") {
+    filtered = filtered.filter((s) => {
+      const start = new Date(s.startDate);
+      return s.status === true && start > today;
+    });
   }
   if (search) {
     filtered = filtered.filter((s) =>

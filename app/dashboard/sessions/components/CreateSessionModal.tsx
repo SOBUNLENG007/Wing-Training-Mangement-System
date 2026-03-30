@@ -81,7 +81,7 @@ export function CreateSessionModal({
       try {
         const dept = await departmentService.getByUserId(selectedTrainerId);
         setDepartment(dept);
-        setSelectedDeptId(String(dept.id));
+        if (dept) setSelectedDeptId(String(dept.id));
       } catch (err) {
         setDepartment(null);
       }
@@ -115,7 +115,6 @@ export function CreateSessionModal({
       departmentId: Number(selectedDeptId),
       instructorId: Number(finalTrainerId),
     };
-    console.log("[CreateSessionModal] Submitting payload:", payload);
     onSubmitAction(payload);
 
     // Reset form
@@ -197,9 +196,13 @@ export function CreateSessionModal({
               </SelectTrigger>
               <SelectContent>
                 {department ? (
-                  <SelectItem value={String(department.id)}>{department.name}</SelectItem>
+                  <SelectItem value={String(department.id)}>
+                    {department.name}
+                  </SelectItem>
                 ) : (
-                  <SelectItem value="none" disabled>No department found</SelectItem>
+                  <SelectItem value="none" disabled>
+                    No department found
+                  </SelectItem>
                 )}
               </SelectContent>
             </Select>
