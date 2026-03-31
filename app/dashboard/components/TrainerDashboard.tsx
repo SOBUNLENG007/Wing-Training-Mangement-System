@@ -110,8 +110,8 @@ export default function TrainerDashboard({ userName }: { userName: string }) {
           attendanceService.getAll(),
         ]);
         setSessions(sessionsRes.payload || sessionsRes);
-        setAssignments(assignmentsRes);
-        setAttendance(attendanceRes);
+        setAssignments(Array.isArray(assignmentsRes) ? assignmentsRes : []);
+        setAttendance(Array.isArray(attendanceRes) ? attendanceRes : []);
       } catch (e) {}
       setLoading(false);
     }

@@ -1,20 +1,19 @@
- 
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { RoleGuard } from "@/components/auth/role-guard"
-import { attendanceService } from "@/service/attendance/attendance.service"
-import type { AttendanceRecord } from "@/lib/types/attendance"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { useState, useEffect } from "react";
+import { RoleGuard } from "@/components/auth/role-guard";
+import { attendanceService } from "@/service/attendance/attendance.service";
+import type { AttendanceRecord } from "@/lib/types/attendance";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 import {
   Users,
   Download,
@@ -24,9 +23,9 @@ import {
   BarChart3,
   Calendar,
   Percent,
-} from "lucide-react"
-import { Skeleton } from "@/components/ui/skeleton"
-import { toast } from "sonner"
+} from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 
 const attendanceCfg = {
   present: {
@@ -44,59 +43,60 @@ const attendanceCfg = {
     icon: Clock,
     color: "bg-wtms-orange/10 text-wtms-orange border-0",
   },
-}
+};
 
 function AttendancePageContent() {
-  const [records, setRecords] = useState<AttendanceRecord[]>([])
-  const [loading, setLoading] = useState(true)
-  const [sessionFilter, setSessionFilter] = useState("all")
+  const [records, setRecords] = useState<AttendanceRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [sessionFilter, setSessionFilter] = useState("all");
 
   // Load attendance data on mount
   useEffect(() => {
     loadAttendance();
-  }, [])
+  }, []);
 
   const loadAttendance = async () => {
     try {
-      setLoading(true)
-      const data = await attendanceService.getAll()
-      setRecords(data)
+      setLoading(true);
+      const data = await attendanceService.getAll();
+      setRecords(Array.isArray(data) ? data : []);
     } catch (error) {
-      toast.error("Failed to load attendance data")
+      toast.error("Failed to load attendance data");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  const filtered =
-    sessionFilter === "all"
+  const filtered = Array.isArray(records)
+    ? sessionFilter === "all"
       ? records
       : records.filter((r) => r.sessionTitle === sessionFilter)
+    : [];
 
-  const totalPresent = filtered.filter((r) => r.status === "present").length
-  const totalAbsent = filtered.filter((r) => r.status === "absent").length
-  const totalLate = filtered.filter((r) => r.status === "late").length
+  const totalPresent = filtered.filter((r) => r.status === "present").length;
+  const totalAbsent = filtered.filter((r) => r.status === "absent").length;
+  const totalLate = filtered.filter((r) => r.status === "late").length;
   const participationRate =
     filtered.length > 0
       ? Math.round(((totalPresent + totalLate) / filtered.length) * 100)
-      : 0
+      : 0;
 
-  const sessions = [...new Set(records.map((r) => r.sessionTitle))]
+  const sessions = [...new Set(records.map((r) => r.sessionTitle))];
 
   function toggleAttendance(id: string) {
     setRecords(
       records.map((r) => {
-        if (r.id !== id) return r
+        if (r.id !== id) return r;
         const next =
           r.status === "present"
             ? "absent"
             : r.status === "absent"
-            ? "late"
-            : "present"
+              ? "late"
+              : "present";
 
-        return { ...r, status: next as AttendanceRecord["status"] }
-      })
-    )
+        return { ...r, status: next as AttendanceRecord["status"] };
+      }),
+    );
   }
 
   return (
@@ -147,7 +147,9 @@ function AttendancePageContent() {
                 <CheckCircle2 className="size-6 text-card" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-foreground">{totalPresent}</p>
+                <p className="text-2xl font-bold text-foreground">
+                  {totalPresent}
+                </p>
                 <p className="text-sm text-muted-foreground">Present</p>
               </div>
             </CardContent>
@@ -159,7 +161,9 @@ function AttendancePageContent() {
                 <XCircle className="size-6 text-card" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-foreground">{totalAbsent}</p>
+                <p className="text-2xl font-bold text-foreground">
+                  {totalAbsent}
+                </p>
                 <p className="text-sm text-muted-foreground">Absent</p>
               </div>
             </CardContent>
@@ -171,7 +175,9 @@ function AttendancePageContent() {
                 <Clock className="size-6 text-card" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-foreground">{totalLate}</p>
+                <p className="text-2xl font-bold text-foreground">
+                  {totalLate}
+                </p>
                 <p className="text-sm text-muted-foreground">Late</p>
               </div>
             </CardContent>
@@ -250,8 +256,8 @@ function AttendancePageContent() {
 
               <tbody>
                 {filtered.map((record) => {
-                  const cfg = attendanceCfg[record.status]
-                  const StatusIcon = cfg.icon
+                  const cfg = attendanceCfg[record.status];
+                  const StatusIcon = cfg.icon;
 
                   return (
                     <tr
@@ -295,7 +301,7 @@ function AttendancePageContent() {
                         </Button>
                       </td>
                     </tr>
-                  )
+                  );
                 })}
               </tbody>
             </table>
@@ -314,24 +320,30 @@ function AttendancePageContent() {
         <CardContent>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {sessions.map((session) => {
-              const sessionRecords = records.filter((r) => r.sessionTitle === session)
+              const sessionRecords = records.filter(
+                (r) => r.sessionTitle === session,
+              );
               const present = sessionRecords.filter(
-                (r) => r.status === "present" || r.status === "late"
-              ).length
+                (r) => r.status === "present" || r.status === "late",
+              ).length;
               const rate =
                 sessionRecords.length > 0
                   ? Math.round((present / sessionRecords.length) * 100)
-                  : 0
+                  : 0;
 
               return (
                 <div
                   key={session}
                   className="space-y-2 rounded-lg border border-border p-4"
                 >
-                  <p className="text-sm font-medium text-foreground">{session}</p>
+                  <p className="text-sm font-medium text-foreground">
+                    {session}
+                  </p>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>{sessionRecords.length} records</span>
-                    <span className="font-semibold text-foreground">{rate}%</span>
+                    <span className="font-semibold text-foreground">
+                      {rate}%
+                    </span>
                   </div>
                   <div className="h-2 overflow-hidden rounded-full bg-muted">
                     <div
@@ -340,13 +352,13 @@ function AttendancePageContent() {
                     />
                   </div>
                 </div>
-              )
+              );
             })}
           </div>
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
 
 export default function AttendancePage() {
@@ -354,5 +366,5 @@ export default function AttendancePage() {
     <RoleGuard allowed={["admin", "trainer"]}>
       <AttendancePageContent />
     </RoleGuard>
-  )
+  );
 }

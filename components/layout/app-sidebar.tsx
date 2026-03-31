@@ -94,7 +94,7 @@ const menuItems: {
   {
     label: "Notifications",
     href: "/dashboard/notifications",
-    roles: ["admin", "trainer", "employee"],
+    roles: ["admin", "trainer"],
     icon: Bell,
   },
   {

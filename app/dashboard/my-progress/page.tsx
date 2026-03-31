@@ -1,15 +1,15 @@
- 
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { RoleGuard } from "@/components/auth/role-guard"
-import { progressService } from "@/service/progress/progress.service"
-import { assignmentsService } from "@/service/assignments/assignments.service"
-import type { ProgressRecord } from "@/lib/types/progress"
-import type { Assignment } from "@/lib/types/assignment"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
+import { useState, useEffect } from "react";
+import { RoleGuard } from "@/components/auth/role-guard";
+import { progressService } from "@/service/progress/progress.service";
+import { assignmentsService } from "@/service/assignments/assignments.service";
+import type { ProgressRecord } from "@/lib/types/progress";
+import type { Assignment } from "@/lib/types/assignment";
+import { mockProgress, mockAssignments } from "@/lib/mock-data";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import {
   TrendingUp,
   CheckCircle2,
@@ -18,9 +18,9 @@ import {
   Target,
   Award,
   BookOpen,
-} from "lucide-react"
-import { Skeleton } from "@/components/ui/skeleton"
-import { toast } from "sonner"
+} from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 
 const statusCfg = {
   completed: {
@@ -41,52 +41,47 @@ const statusCfg = {
     color: "bg-muted text-muted-foreground border-0",
     ringColor: "ring-border",
   },
-}
+};
 
 function MyProgressPageContent() {
-  const [progress, setProgress] = useState<ProgressRecord[]>([])
-  const [assignments, setAssignments] = useState<Assignment[]>([])
-  const [loading, setLoading] = useState(true)
+  const [progress, setProgress] = useState<ProgressRecord[]>([]);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Load data on mount
   useEffect(() => {
-    loadData()
-  }, [])
+    setLoading(true);
+    setTimeout(() => {
+      setProgress(Array.isArray(mockProgress) ? mockProgress : []);
+      setAssignments(Array.isArray(mockAssignments) ? mockAssignments : []);
+      setLoading(false);
+    }, 300);
+  }, []);
 
-  const loadData = async () => {
-    try {
-      setLoading(true)
-      const [progressData, assignmentsData] = await Promise.all([
-        progressService.getMyProgress(),
-        assignmentsService.getMyAssignments()
-      ])
-      setProgress(progressData)
-      setAssignments(assignmentsData)
-    } catch (error) {
-      toast.error("Failed to load progress data")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const completedCount = progress.filter((p) => p.status === "completed").length
-  const inProgressCount = progress.filter((p) => p.status === "in-progress").length
-  const totalCourses = progress.length
+  const completedCount = progress.filter(
+    (p) => p.status === "completed",
+  ).length;
+  const inProgressCount = progress.filter(
+    (p) => p.status === "in-progress",
+  ).length;
+  const totalCourses = progress.length;
 
   const avgCompletion =
     totalCourses > 0
       ? Math.round(
-          progress.reduce((a, p) => a + p.completionRate, 0) / totalCourses
+          progress.reduce((a, p) => a + p.completionRate, 0) / totalCourses,
         )
-      : 0
+      : 0;
 
-  const scoredItems = progress.filter((p) => p.score > 0)
+  const scoredItems = progress.filter((p) => p.score > 0);
   const avgScore =
     scoredItems.length > 0
-      ? Math.round(scoredItems.reduce((a, p) => a + p.score, 0) / scoredItems.length)
-      : 0
+      ? Math.round(
+          scoredItems.reduce((a, p) => a + p.score, 0) / scoredItems.length,
+        )
+      : 0;
 
-  const gradedAssignments = assignments.filter((a) => a.status === "graded")
+  const gradedAssignments = assignments.filter((a) => a.status === "graded");
 
   return (
     <div className="space-y-6">
@@ -105,7 +100,9 @@ function MyProgressPageContent() {
               <CheckCircle2 className="size-6 text-card" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-foreground">{completedCount}</p>
+              <p className="text-2xl font-bold text-foreground">
+                {completedCount}
+              </p>
               <p className="text-sm text-muted-foreground">Completed</p>
             </div>
           </CardContent>
@@ -117,7 +114,9 @@ function MyProgressPageContent() {
               <Clock className="size-6 text-card" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-foreground">{inProgressCount}</p>
+              <p className="text-2xl font-bold text-foreground">
+                {inProgressCount}
+              </p>
               <p className="text-sm text-muted-foreground">In Progress</p>
             </div>
           </CardContent>
@@ -129,7 +128,9 @@ function MyProgressPageContent() {
               <Target className="size-6 text-card" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-foreground">{avgCompletion}%</p>
+              <p className="text-2xl font-bold text-foreground">
+                {avgCompletion}%
+              </p>
               <p className="text-sm text-muted-foreground">Avg Completion</p>
             </div>
           </CardContent>
@@ -150,12 +151,14 @@ function MyProgressPageContent() {
 
       {/* Course Progress Cards */}
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-foreground">Training Progress</h2>
+        <h2 className="text-lg font-semibold text-foreground">
+          Training Progress
+        </h2>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {mockProgress.map((p) => {
-            const cfg = statusCfg[p.status]
-            const StatusIcon = cfg.icon
+            const cfg = statusCfg[p.status];
+            const StatusIcon = cfg.icon;
 
             return (
               <Card key={p.sessionTitle} className={`ring-1 ${cfg.ringColor}`}>
@@ -201,7 +204,7 @@ function MyProgressPageContent() {
                   )}
                 </CardContent>
               </Card>
-            )
+            );
           })}
         </div>
       </div>
@@ -226,17 +229,26 @@ function MyProgressPageContent() {
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-foreground">{a.title}</p>
-                  <p className="text-xs text-muted-foreground">{a.sessionTitle}</p>
+                  <p className="text-sm font-medium text-foreground">
+                    {a.title}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {a.sessionTitle}
+                  </p>
                 </div>
 
                 <div className="text-right">
                   <p className="text-lg font-bold text-foreground">
                     {a.score}
-                    <span className="text-sm text-muted-foreground">/{a.maxScore}</span>
+                    <span className="text-sm text-muted-foreground">
+                      /{a.maxScore}
+                    </span>
                   </p>
                   <p className="text-[10px] text-muted-foreground">
-                    {a.score && a.maxScore ? Math.round((a.score / a.maxScore) * 100) : 0}%
+                    {a.score && a.maxScore
+                      ? Math.round((a.score / a.maxScore) * 100)
+                      : 0}
+                    %
                   </p>
                 </div>
               </div>
@@ -245,7 +257,7 @@ function MyProgressPageContent() {
         </Card>
       )}
     </div>
-  )
+  );
 }
 
 export default function MyProgressPage() {
@@ -253,5 +265,5 @@ export default function MyProgressPage() {
     <RoleGuard allowed={["employee"]}>
       <MyProgressPageContent />
     </RoleGuard>
-  )
+  );
 }

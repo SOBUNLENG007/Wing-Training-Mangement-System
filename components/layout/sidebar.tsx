@@ -5,7 +5,7 @@ const menuItems = [
   { label: "Assignments", href: "/dashboard/assignments", roles: ["admin", "trainer", "employee"] },
   { label: "Users", href: "/dashboard/users", roles: ["admin"] },
   { label: "Attendance", href: "/dashboard/attendance", roles: ["admin", "trainer"] },
-  { label: "Notifications", href: "/dashboard/notifications", roles: ["admin", "trainer", "employee"] },
+  { label: "Notifications", href: "/dashboard/notifications", roles: ["admin", "trainer"] },
   { label: "Reports", href: "/dashboard/reports", roles: ["admin", "trainer"] },
   { label: "Settings", href: "/settings/profile", roles: ["admin", "trainer", "employee"] },
 ];

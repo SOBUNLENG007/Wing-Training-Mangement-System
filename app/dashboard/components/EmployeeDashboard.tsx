@@ -103,13 +103,6 @@ export default function EmployeeDashboard({ userName }: { userName: string }) {
           href="/dashboard/assignments"
         />
         <StatCard
-          label="Unread Notifications"
-          value={unreadNotifications.length}
-          icon={Bell}
-          color="bg-wtms-orange"
-          href="/dashboard/notifications"
-        />
-        <StatCard
           label="Courses In Progress"
           value={inProgressCourses.length}
           icon={BarChart3}

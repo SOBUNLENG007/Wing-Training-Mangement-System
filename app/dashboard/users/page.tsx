@@ -481,7 +481,9 @@ function UsersPageContent() {
               phoneNumber: newUser.phoneNumber,
               address: newUser.address,
               departmentId: newUser.departmentId,
-            });
+              dateOfBirth: new Date(newUser.dateOfBirth),
+              gender: newUser.gender,
+            } as any);
             if (created) {
               setUsers((prev) => [created, ...prev]);
               setShowAdd(false);
