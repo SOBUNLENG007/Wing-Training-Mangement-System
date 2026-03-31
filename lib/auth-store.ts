@@ -10,6 +10,8 @@ type User = {
   name?: string;
   departmentId?: number;
   departmentName?: string;
+  firstName?: string;
+  lastName?: string;
 };
 
 type AuthState = {

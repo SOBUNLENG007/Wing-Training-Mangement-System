@@ -109,9 +109,27 @@ export default function TrainerDashboard({ userName }: { userName: string }) {
           assignmentsService.getAll(),
           attendanceService.getAll(),
         ]);
-        setSessions(sessionsRes.payload || sessionsRes);
-        setAssignments(Array.isArray(assignmentsRes) ? assignmentsRes : []);
-        setAttendance(Array.isArray(attendanceRes) ? attendanceRes : []);
+        setSessions(
+          Array.isArray((sessionsRes as any)?.payload)
+            ? (sessionsRes as any).payload
+            : Array.isArray(sessionsRes)
+              ? sessionsRes
+              : [],
+        );
+        setAssignments(
+          Array.isArray((assignmentsRes as any)?.payload)
+            ? (assignmentsRes as any).payload
+            : Array.isArray(assignmentsRes)
+              ? assignmentsRes
+              : [],
+        );
+        setAttendance(
+          Array.isArray((attendanceRes as any)?.payload)
+            ? (attendanceRes as any).payload
+            : Array.isArray(attendanceRes)
+              ? attendanceRes
+              : [],
+        );
       } catch (e) {}
       setLoading(false);
     }

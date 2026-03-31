@@ -2,26 +2,25 @@
 
 import Link from "next/link";
 import { Bell, Search, ChevronDown } from "lucide-react";
-// import { useAuth } from "@/lib/auth-store";
 import { useAuthStore } from "@/lib/auth-store";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
-// Mock data import - ensure this path is correct
 import { mockNotifications } from "@/lib/mock-data";
 
 export function TopHeader() {
   // 1. Grab user from store
   const user = useAuthStore((state) => state.user);
 
-  // 2. FULL NAME LOGIC (firstName + lastName)
-  const fullName =
-    [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "Guest";
+  // 2. FULL NAME LOGIC (firstName + lastName or fallback to name)
+  const firstName = user?.firstName;
+  const lastName = user?.lastName;
+  const fullName = [firstName, lastName].filter(Boolean).join(" ") || "Guest";
 
   // 3. INITIALS LOGIC (from firstName + lastName)
   const initials =
-    [user?.firstName, user?.lastName]
+    [firstName, lastName]
       .filter(Boolean)
-      .map((n: string) => n[0])
+      .map((n) => n?.[0] ?? "")
       .join("")
       .slice(0, 2)
       .toUpperCase() || "??";
@@ -37,9 +36,9 @@ export function TopHeader() {
     : 0;
 
   return (
-    <header className="sticky top-0 z-30 flex h-[74px] shrink-0 items-center justify-between border-b border-slate-200 bg-white px-7">
+    <header className="sticky top-0 z-30 flex h-18.5 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-7">
       {/* LEFT SIDE: Global Search */}
-      <div className="relative hidden w-full max-w-[370px] sm:block">
+      <div className="relative hidden w-full max-w-92.5 sm:block">
         <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
         <Input
           type="text"
@@ -56,14 +55,14 @@ export function TopHeader() {
           className="relative flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-slate-100"
           aria-label="Notifications"
         >
-          <Bell className="h-[22px] w-[22px] text-slate-500 transition-colors hover:text-slate-700" />
+          <Bell className="h-5.5 w-5.5 text-slate-500 transition-colors hover:text-slate-700" />
           {unreadCount > 0 && (
             <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
           )}
         </button>
 
         {/* Divider */}
-        <div className="hidden h-8 w-[1px] bg-slate-200 sm:block" />
+        <div className="hidden h-8 w-px bg-slate-200 sm:block" />
 
         {/* Profile Link */}
         <Link

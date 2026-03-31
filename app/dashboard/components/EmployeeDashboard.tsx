@@ -56,10 +56,34 @@ export default function EmployeeDashboard({ userName }: { userName: string }) {
             notificationsService.getAll(),
             progressService.getAll(),
           ]);
-        setSessions(sessionsRes.payload || sessionsRes);
-        setAssignments(assignmentsRes);
-        setNotifications(notificationsRes);
-        setProgress(progressRes);
+        setSessions(
+          Array.isArray((sessionsRes as any)?.payload)
+            ? (sessionsRes as any).payload
+            : Array.isArray(sessionsRes)
+              ? sessionsRes
+              : [],
+        );
+        setAssignments(
+          Array.isArray((assignmentsRes as any)?.payload)
+            ? (assignmentsRes as any).payload
+            : Array.isArray(assignmentsRes)
+              ? assignmentsRes
+              : [],
+        );
+        setNotifications(
+          Array.isArray((notificationsRes as any)?.payload)
+            ? (notificationsRes as any).payload
+            : Array.isArray(notificationsRes)
+              ? notificationsRes
+              : [],
+        );
+        setProgress(
+          Array.isArray((progressRes as any)?.payload)
+            ? (progressRes as any).payload
+            : Array.isArray(progressRes)
+              ? progressRes
+              : [],
+        );
       } catch (e) {}
       setLoading(false);
     }

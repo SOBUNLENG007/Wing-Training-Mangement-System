@@ -123,13 +123,41 @@ export default function AdminDashboard({ userName }: { userName: string }) {
           attendanceService.getAll(),
           usersService.getAll(),
         ]);
-        setSessions(Array.isArray(sessionsRes) ? sessionsRes : []);
-        setAssignments(Array.isArray(assignmentsRes) ? assignmentsRes : []);
-        setNotifications(
-          Array.isArray(notificationsRes) ? notificationsRes : [],
+        setSessions(
+          Array.isArray((sessionsRes as any)?.payload)
+            ? (sessionsRes as any).payload
+            : Array.isArray(sessionsRes)
+              ? sessionsRes
+              : [],
         );
-        setAttendance(Array.isArray(attendanceRes) ? attendanceRes : []);
-        setUsers(Array.isArray(usersRes) ? usersRes : []);
+        setAssignments(
+          Array.isArray((assignmentsRes as any)?.payload)
+            ? (assignmentsRes as any).payload
+            : Array.isArray(assignmentsRes)
+              ? assignmentsRes
+              : [],
+        );
+        setNotifications(
+          Array.isArray((notificationsRes as any)?.payload)
+            ? (notificationsRes as any).payload
+            : Array.isArray(notificationsRes)
+              ? notificationsRes
+              : [],
+        );
+        setAttendance(
+          Array.isArray((attendanceRes as any)?.payload)
+            ? (attendanceRes as any).payload
+            : Array.isArray(attendanceRes)
+              ? attendanceRes
+              : [],
+        );
+        setUsers(
+          Array.isArray((usersRes as any)?.payload)
+            ? (usersRes as any).payload
+            : Array.isArray(usersRes)
+              ? usersRes
+              : [],
+        );
       } catch (e) {}
       setLoading(false);
     }
