@@ -27,7 +27,12 @@ export const materialsService = {
   },
 
   // Create new material (ADMIN or TRAINER)
-  create: async (data: Omit<Material, "id">): Promise<Material> => {
+  create: async (data: {
+    title: string;
+    fileUrl: string;
+    sessionId: string;
+    trainerId: number;
+  }): Promise<any> => {
     const res = await api.post("/materials", data);
     return res.data;
   },

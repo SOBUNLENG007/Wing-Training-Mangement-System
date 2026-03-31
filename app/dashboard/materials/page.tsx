@@ -14,6 +14,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -153,14 +160,13 @@ function MaterialsPageContent() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const createdUrlsRef = useRef<Set<string>>(new Set());
 
-  const isAdmin = user?.role === "admin";
-  const isTrainer = user?.role === "trainer";
+  const isAdmin = user?.role?.toLocaleLowerCase() === "admin";
+  const isTrainer = user?.role?.toLocaleLowerCase() === "trainer";
   const canManageMaterials = isAdmin || isTrainer;
 
   useEffect(() => {
     loadMaterials();
     loadSessions();
-    loadTrainers();
   }, []);
 
   const loadMaterials = async () => {
@@ -175,20 +181,32 @@ function MaterialsPageContent() {
     }
   };
 
-  // Fetch all trainers and build a map for lookup
-  const loadTrainers = async () => {
-    try {
-      // Only fetch users with role 'Trainer' (case-insensitive)
-      const trainers = await usersService.getByRole("Trainer");
-      const map: Record<string, User> = {};
-      trainers.forEach((trainer) => {
-        map[String(trainer.id)] = trainer;
-      });
-      setTrainersMap(map);
-    } catch (error) {
-      toast.error("Failed to load trainers");
-    }
-  };
+  // Fetch all trainers from DB (role: trainer, case-insensitive)
+  const [trainers, setTrainers] = useState<any[]>([]);
+
+  // Load trainers when upload dialog is opened and user is admin
+  useEffect(() => {
+    const fetchTrainers = async () => {
+      if (!isAdmin || !showUpload) return;
+      try {
+        // Try both lowercase and capitalized role for backend compatibility
+        let trainersList = await usersService.getAll({ role: "trainer" });
+        if (!trainersList || !trainersList.length) {
+          trainersList = await usersService.getAll({ role: "Trainer" });
+        }
+        // Filter to only users with role 'trainer' (case-insensitive)
+        const filtered = (trainersList || []).filter(
+          (u) => u.role && u.role.toLowerCase() === "trainer",
+        );
+        setTrainers(filtered);
+      } catch (err) {
+        setTrainers([]);
+      }
+    };
+    fetchTrainers();
+  }, [isAdmin, showUpload]);
+  // State for admin trainer select
+  const [selectedTrainerId, setSelectedTrainerId] = useState<string>("");
 
   // Fetch all sessions and build a map for lookup
   const loadSessions = async () => {
@@ -295,15 +313,20 @@ function MaterialsPageContent() {
     setMaterials((prev) => prev.filter((m) => m.id !== material.id));
   }
 
-  function handleUpload(e: React.FormEvent<HTMLFormElement>) {
+  async function handleUpload(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!canManageMaterials) return;
     const fd = new FormData(e.currentTarget);
     const title = (fd.get("title") as string)?.trim();
-    const session = (fd.get("session") as string)?.trim();
-    const type = ((fd.get("type") as string) || "pdf") as MaterialType;
-    const access = ((fd.get("access") as string) || "all") as AccessLevel;
-    if (!title || !session) {
+    const sessionId = (fd.get("sessionId") as string)?.trim();
+    let trainerId: number | undefined = undefined;
+    if (isTrainer) {
+      trainerId = user?.id;
+    } else if (isAdmin) {
+      // Use selectedTrainerId from state
+      trainerId = selectedTrainerId ? parseInt(selectedTrainerId) : undefined;
+    }
+    if (!title || !sessionId || !trainerId) {
       setUploadError("Please fill in all required fields.");
       return;
     }
@@ -311,30 +334,35 @@ function MaterialsPageContent() {
       setUploadError("Please choose a file first.");
       return;
     }
-    if (!isValidFileForType(selectedFile, type)) {
+    if (
+      !isValidFileForType(
+        selectedFile,
+        (fd.get("type") as MaterialType) || "pdf",
+      )
+    ) {
       setUploadError(
-        `The file does not match the selected type: ${type.toUpperCase()}.`,
+        `The file does not match the selected type: ${((fd.get("type") as string) || "pdf").toUpperCase()}.`,
       );
       return;
     }
+    // Simulate file upload (replace with real upload if available)
     const blobUrl = URL.createObjectURL(selectedFile);
     createdUrlsRef.current.add(blobUrl);
-    const newMaterial: UIMaterial = {
-      id: `m${Date.now()}`,
-      title,
-      type,
-      sessionId: "s1",
-      sessionTitle: session,
-      uploadedBy: user?.name || "Unknown User",
-      uploadedAt: new Date().toISOString().split("T")[0],
-      size: formatFileSize(selectedFile.size),
-      accessLevel: access,
-      fileUrl: blobUrl,
-      originalFileName: selectedFile.name,
-    };
-    setMaterials((prev) => [newMaterial, ...prev]);
-    setShowUpload(false);
-    resetUploadState();
+    try {
+      await materialsService.create({
+        title,
+        fileUrl: blobUrl,
+        sessionId,
+        trainerId,
+      });
+      toast.success("Material uploaded successfully");
+      loadMaterials();
+      setShowUpload(false);
+      resetUploadState();
+      setSelectedTrainerId(""); // Reset trainer select after upload
+    } catch (err) {
+      setUploadError("Failed to upload material");
+    }
   }
 
   useEffect(() => {
@@ -463,7 +491,7 @@ function MaterialsPageContent() {
                       <span>
                         Trainer:{" "}
                         {trainer
-                          ? `${trainer.first_name} ${trainer.last_name}`
+                          ? `${trainer.firstName} ${trainer.lastName}`
                           : "-"}
                       </span>
                       <span>
@@ -657,27 +685,60 @@ function MaterialsPageContent() {
                     <option value="video">Video</option>
                   </select>
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-foreground">Access Level</Label>
-                  <select
-                    name="access"
-                    defaultValue="all"
-                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                  >
-                    <option value="all">All Users</option>
-                    <option value="department">Department Only</option>
-                    <option value="specific">Authorized Only</option>
-                  </select>
-                </div>
               </div>
               <div className="space-y-2">
                 <Label className="text-foreground">Session</Label>
-                <Input
-                  name="session"
+                <select
+                  name="sessionId"
                   required
-                  placeholder="e.g. Cybersecurity Fundamentals"
-                />
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  defaultValue=""
+                >
+                  <option value="" disabled>
+                    Select a session
+                  </option>
+                  {Object.values(sessionsMap)
+                    .filter((session) => {
+                      // Only show sessions that are active (status === true) and not ended yet
+                      if (!session.status) return false;
+                      if (!session.endDate) return true; // If no endDate, treat as active
+                      const now = new Date();
+                      const end = new Date(session.endDate);
+                      return end >= now;
+                    })
+                    .map((session) => (
+                      <option key={session.id} value={session.id}>
+                        {session.title}
+                      </option>
+                    ))}
+                </select>
               </div>
+              {isAdmin && (
+                <div className="space-y-2">
+                  <Label>Trainer</Label>
+                  <Select
+                    value={selectedTrainerId}
+                    onValueChange={setSelectedTrainerId}
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select trainer" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {trainers.length === 0 && (
+                        <SelectItem value="no-trainers" disabled>
+                          No trainers found
+                        </SelectItem>
+                      )}
+                      {trainers.map((t) => (
+                        <SelectItem key={t.id} value={String(t.id)}>
+                          {t.firstName} {t.lastName} ({t.email})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <div className="space-y-2">
                 <input
                   ref={fileInputRef}
