@@ -48,6 +48,11 @@ type AddUserForm = {
   gender: string;
   departmentId: number;
 };
+// Department creation modal form type
+type AddDepartmentForm = {
+  name: string;
+  description: string;
+};
 
 function AddUserModal({
   open,
@@ -58,14 +63,50 @@ function AddUserModal({
   onClose: () => void;
   onAdd: (user: AddUserForm) => void;
 }) {
+  // Department modal state/hooks
+  const [showDeptModal, setShowDeptModal] = useState(false);
+  const {
+    register: registerDept,
+    handleSubmit: handleSubmitDept,
+    reset: resetDept,
+    formState: { isSubmitting: isSubmittingDept, errors: errorsDept },
+  } = useForm<AddDepartmentForm>();
+
+  // Add department handler
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [loadingDepartments, setLoadingDepartments] = useState(false);
+  const onAddDepartment = async (data: AddDepartmentForm) => {
+    try {
+      await departmentService.create({
+        name: data.name,
+        description: data.description,
+        status: true,
+      });
+      toast.success("Department added successfully");
+      setShowDeptModal(false);
+      resetDept();
+      // Refresh departments
+      setLoadingDepartments(true);
+      const dataList = await departmentService.getAll();
+      setDepartments(
+        Array.isArray(dataList)
+          ? dataList
+          : dataList && Array.isArray((dataList as any).payload)
+            ? (dataList as any).payload
+            : [],
+      );
+      setLoadingDepartments(false);
+    } catch {
+      toast.error("Failed to add department");
+    }
+  };
+
   const {
     register,
     handleSubmit,
     reset,
     formState: { isSubmitting, errors },
   } = useForm<AddUserForm>();
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [loadingDepartments, setLoadingDepartments] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -75,7 +116,8 @@ function AddUserModal({
       .then((data) => {
         let arr = [];
         if (Array.isArray(data)) arr = data;
-        else if (data && Array.isArray(data.payload)) arr = data.payload;
+        else if (data && Array.isArray((data as any).payload))
+          arr = (data as any).payload;
         setDepartments(arr);
       })
       .finally(() => setLoadingDepartments(false));
@@ -229,10 +271,68 @@ function AddUserModal({
           <div className="flex flex-col col-span-2">
             <label
               htmlFor="departmentId"
-              className="mb-1 text-xs font-semibold text-slate-600"
+              className="mb-1 text-xs font-semibold text-slate-600 flex items-center gap-2"
             >
               Department
+              <button
+                type="button"
+                className="ml-1 p-1 rounded hover:bg-slate-100"
+                title="Add Department"
+                onClick={() => setShowDeptModal(true)}
+              >
+                <Plus className="w-4 h-4 text-blue-600" />
+              </button>
             </label>
+            {/* Add Department Modal */}
+            <Dialog open={showDeptModal} onOpenChange={setShowDeptModal}>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Add Department</DialogTitle>
+                </DialogHeader>
+                <form
+                  onSubmit={handleSubmitDept(onAddDepartment)}
+                  className="space-y-4"
+                >
+                  <div>
+                    <label className="block text-xs font-semibold mb-1">
+                      Name
+                    </label>
+                    <input
+                      {...registerDept("name", { required: true })}
+                      className="w-full border rounded px-3 py-2"
+                      placeholder="Department Name"
+                    />
+                    {errorsDept.name && (
+                      <span className="text-xs text-red-500">
+                        Name is required
+                      </span>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1">
+                      Description
+                    </label>
+                    <input
+                      {...registerDept("description", { required: true })}
+                      className="w-full border rounded px-3 py-2"
+                      placeholder="Description"
+                    />
+                    {errorsDept.description && (
+                      <span className="text-xs text-red-500">
+                        Description is required
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full bg-blue-600 text-white py-2 rounded"
+                    disabled={isSubmittingDept}
+                  >
+                    Add Department
+                  </button>
+                </form>
+              </DialogContent>
+            </Dialog>
             <select
               id="departmentId"
               {...register("departmentId", {
