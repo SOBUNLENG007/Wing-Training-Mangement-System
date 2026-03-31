@@ -243,9 +243,27 @@ function AddUserModal({
             <input
               id="dateOfBirth"
               type="date"
-              {...register("dateOfBirth", { required: true })}
+              {...register("dateOfBirth", {
+                required: true,
+                validate: (value) => {
+                  if (!value) return "Date of birth is required";
+                  const selected = new Date(value);
+                  const today = new Date();
+                  // Remove time part for comparison
+                  selected.setHours(0, 0, 0, 0);
+                  today.setHours(0, 0, 0, 0);
+                  return (
+                    selected < today || "Date of birth must be before today"
+                  );
+                },
+              })}
               className="w-full border rounded px-3 py-2"
             />
+            {errors.dateOfBirth && (
+              <span className="text-xs text-red-500 mt-1">
+                {errors.dateOfBirth.message as string}
+              </span>
+            )}
           </div>
           <div className="flex flex-col">
             <label
